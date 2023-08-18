@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Server</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #d9d9d9;
+            color: #333;
+            margin: 20px;
+            padding: 0;
+        }
+        h1 {
+            font-size: 40px;
+            color: #0056b3;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            background-color: #0056b3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .btn:hover {
+            background-color: #004380;
+        }
+        .file-input {
+            display: none;
+        }
+        .go-back-root {
+            margin-top: 10px;
+        }
+        .current-dir-text {
+            font-size: 18px;
+            color: #666;
+        }
+        .current-dir-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .file-name {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .table-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #0056b3;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        td {
+            font-size: 14px;
+            background-color: #e9e9e9;
+        }
+        td a {
+            color: #0056b3;
+            text-decoration: none;
+            transition: color 0.3s ease-in-out;
+        }
+        td a:hover {
+            color: #004380;
+        }
+        .table-container p {
+            font-size: 18px;
+            color: #777;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .upload-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .upload-container .btn {
+            background-color: #2dbb56;
+            margin-right: 10px;
+        }
+        .file-name-display {
+            color: #2dbb56;
+            font-weight: bold;
+        }
+        .go-back-root .btn i {
+            margin-right: 5px;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #0056b3;
+            border-radius: 4px;
+        }
+        .logout-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0056b3;
+            color: white;
+            border-radius: 50%;
+            font-size: 24px;
+            text-decoration: none;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .logout-btn:hover {
+            background-color: #004380;
+        }
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+            }
+            th:nth-child(2),
+            td:nth-child(2),
+            th:nth-child(3),
+            td:nth-child(3) {
+                display: none;
+            }
+            th:nth-child(1),
+            td:nth-child(1) {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1><i class="fas fa-folder-open"></i> File Server</h1>
+    <div class="upload-container">
+        <form action="{{ url_for('upload_file', folder_or_file=current_dir) }}" method="post" enctype="multipart/form-data">
+            <label for="file-input" class="btn"><i class="fas fa-file-upload"></i> Choose File</label>
+            <input type="file" id="file-input" name="file" class="file-input">
+            <button type="submit" class="btn" id="upload-btn"><i class="fas fa-cloud-upload-alt"></i> Upload</button>
+        </form>
+        <div class="file-name-display"></div>
+    </div>
+    <div class="current-dir-container">
+        <div class="go-back-root">
+            {% if current_dir != '.' %}
+                <a class="btn" href="{{ url_for('show_folder_or_file', folder_or_file=os.path.dirname(folder_or_file)) }}"><i class="fas fa-chevron-left"></i> Go back</a>
+            {% endif %}
+            <a class="btn" href="{{ url_for('index') }}"><i class="fas fa-home"></i> Root</a>
+        </div>
+        <h2>
+            <span class="current-dir-text"><i class="fas fa-folder"></i> Current Directory: \{{ folder_or_file }}</span>
+        </h2>
+    </div>
+    <div class="table-container">
+        {% if is_empty %}
+            <p>Folder is empty.</p>
+        {% else %}
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Date Modified</th>
+                    <th>Size</th>
+                </tr>
+                {% for entry in files %}
+                    <tr>
+                        <td>
+                            {% if entry.type == 'folder' %}
+                                <a href="{{ url_for('show_folder_or_file', folder_or_file=os.path.join(folder_or_file, entry.name)) }}"><i class="fas fa-folder"></i> {{ entry.name }}</a>
+                            {% else %}
+                                <a href="{{ url_for('download_file', file_path=entry.path) }}"><i class="fas fa-file"></i> {{ entry.name }}</a>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.date_modified }}</td>
+                        <td>{{ entry.size }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('logout') }}" class="logout-btn" id="logout-link"><i class="fas fa-power-off"></i></a>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+    <script>
+        // Get references to DOM elements
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.querySelector('.file-name-display');
+        const uploadBtn = document.getElementById('upload-btn');
+        let selectedFile = null;
+
+        // Listen for changes in the file input
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                selectedFile = file;
+                uploadBtn.textContent = `Upload ${file.name}`;
+            } else {
+                selectedFile = null;
+                uploadBtn.textContent = 'Upload';
+            }
+        });
+
+        // Display a temporary message on the upload button
+        function showTempMessage(message) {
+            uploadBtn.textContent = message;
+            setTimeout(() => {
+                uploadBtn.textContent = 'Upload';
+            }, 2000);
+        }
+
+        // Handle form submission (uploading a file)
+        const form = document.querySelector('form');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (selectedFile) {
+                const formData = new FormData(form);
+                formData.set('file', selectedFile);
+                const uploadUrl = '{{ url_for("upload_file", folder_or_file=current_dir) }}';
+                try {
+                    uploadBtn.textContent = 'Uploading...';
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    if (response.ok) {
+                        showTempMessage('Upload successful...');
+                        selectedFile = null;
+                        fileInput.value = '';
+                        fileNameDisplay.textContent = '';
+                    } else {
+                        showTempMessage('Upload failed...');
+                    }
+                } catch (error) {
+                    showTempMessage('Upload failed...');
+                }
+            }
+        });
+
+        // Handle user logout
+        const logoutLink = document.getElementById('logout-link');
+        logoutLink.addEventListener('click', () => {
+            fetch('{{ url_for('logout') }}')
+                .then(() => {
+                    window.location.href = '{{ url_for('index') }}';
+                })
+                .catch((error) => {
+                    console.error('Logout error:', error);
+                });
+        });
+    </script>
+</body>
+</html>

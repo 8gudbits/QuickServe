@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <!-- Link to Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <!-- Internal CSS styles -->
+    <style>
+        /* Styling for the entire page */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #d9d9d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Styling for the login container */
+        .login-container {
+            background-color: #f5f5f5;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            height: 340px;
+            text-align: center;
+        }
+
+        /* Styling for the login header */
+        .login-header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0056b3;
+        }
+
+        /* Styling for login labels */
+        .login-label {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Styling for the login form */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Styling for form groups */
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+            width: 100%;
+        }
+
+        /* Hiding the label */
+        .form-group label {
+            display: none;
+        }
+
+        /* Styling for input fields */
+        .form-group input {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border: 1px solid #0056b3;
+            border-radius: 4px;
+            width: 80%;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        /* Styling for input focus */
+        .form-group input:focus {
+            border-color: #004380;
+        }
+
+        /* Styling for the show/hide password button */
+        .show-hide-button {
+            position: absolute;
+            top: 50%;
+            right: 40px;
+            color: #444444;
+            transform: translateY(-50%);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        /* Styling for show/hide button hover */
+        .show-hide-button:hover {
+            color: #004380;
+        }
+
+        /* Styling for the login button */
+        .login-button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 80%;
+            font-size: 14px;
+        }
+
+        /* Styling for login button hover */
+        .login-button:hover {
+            background-color: #004380;
+        }
+
+        /* Styling for error messages */
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1><i class="fas fa-folder-open"></i> File Server</h1>
+        </div>
+        <div class="login-label">
+            <h1>Login</h1>
+        </div>
+        <form class="login-form" method="post">
+            <div class="form-group">
+                <input type="text" id="username" name="username" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" name="password" placeholder="Password" required>
+                <i class="fas fa-eye show-hide-button" id="show-hide-password"></i>
+            </div>
+            <button class="login-button" type="submit">Log In</button>
+        </form>
+        <!-- Display error message if login failed -->
+        {% if login_failed %}
+            <p class="error-message">Incorrect username or password. Please try again.</p>
+        {% endif %}
+    </div>
+    <script>
+        <!-- JavaScript to toggle password visibility -->
+        const passwordInput = document.getElementById('password');
+        const showHideButton = document.getElementById('show-hide-password');
+        showHideButton.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                showHideButton.classList.remove('fa-eye');
+                showHideButton.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                showHideButton.classList.remove('fa-eye-slash');
+                showHideButton.classList.add('fa-eye');
+            }
+        });
+    </script>
+</body>
+</html>

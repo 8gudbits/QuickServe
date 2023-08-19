@@ -3,6 +3,7 @@ import time
 import threading
 import json
 import secrets
+import sys
 from waitress import serve
 from flask import Flask, render_template_string, request, send_file, session
 from flask_limiter import Limiter
@@ -18,10 +19,23 @@ limiter = Limiter(
 )
 
 
-current_directory = os.path.dirname(os.path.abspath(__file__))
-ignore_files = [f"{os.path.abspath(__file__)}",
+# Get the directory where the executable or script is located
+if getattr(sys, 'frozen', False):  # If the code is compiled into an executable
+    current_directory = os.path.dirname(sys.executable)
+else:
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+
+ignore_files = [f"{os.path.join(current_directory, __file__)}",
                 f"{os.path.join(current_directory, 'favicon.ico')}",
                 f"{os.path.join(current_directory, 'accounts.json')}"]
+
+
+# Create a account.json file if not already present in current dir
+user_accounts_file = os.path.join(current_directory, 'accounts.json')
+
+if not os.path.exists(user_accounts_file):
+    with open(user_accounts_file, 'w') as file:
+        file.write("{}")
 
 
 # Function to get the current working directory

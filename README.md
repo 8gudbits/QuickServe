@@ -16,6 +16,12 @@
 
 ## Installation
 
+![Static Badge](https://img.shields.io/badge/Version-v1.0-blue)
+
+#### Get the latest release for windows from here. [[Version-v1.0]](https://github.com/TechWhizKid/pyFlaskyServe/releases)
+
+  - **or:**
+
 1. Clone the repository:
 
    ```bash

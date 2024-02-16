@@ -1,3 +1,4 @@
 Flask
 Flask-Limiter
-PyQt5
+pyqt5
+waitress

@@ -1,4 +1,0 @@
-Flask
-Flask-Limiter
-pyqt5
-waitress

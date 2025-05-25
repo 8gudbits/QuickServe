@@ -18,14 +18,14 @@
 
 ![Static Badge](https://img.shields.io/badge/Version-v1.0-blue)
 
-#### Get the latest release for windows from here. [[Version-v1.0]](https://github.com/TechWhizKid/pyFlaskyServe/releases)
+#### Get the latest release for windows from here. [[Version-v1.0]](https://github.com/8gudbits/pyFlaskyServe/releases)
 
   - **or:**
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/TechWhizKid/pyFlaskyServe.git
+   git clone https://github.com/8gudbits/pyFlaskyServe.git
    ```
 
 2. Install the required dependencies using pip:
@@ -73,12 +73,12 @@ To get started, simply open the accounts.json file and create user accounts with
 
 ## Screenshots
 
-<img src="https://github.com/TechWhizKid/pyFlaskyServe/blob/main/Preview/login_page.png?raw=true" alt="Login page"><br>
-<img src="https://github.com/TechWhizKid/pyFlaskyServe/blob/main/Preview/file_server.png?raw=true" alt="File server">
+<img src="https://github.com/8gudbits/pyFlaskyServe/blob/main/Preview/login_page.png?raw=true" alt="Login page"><br>
+<img src="https://github.com/8gudbits/pyFlaskyServe/blob/main/Preview/file_server.png?raw=true" alt="File server">
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/TechWhizKid/pyFlaskyServe/blob/main/LICENSE).
+This project is licensed under the [MIT License](https://github.com/8gudbits/pyFlaskyServe/blob/main/LICENSE).
 
 ---
 

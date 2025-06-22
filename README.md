@@ -1,84 +1,95 @@
-# pyFlaskyServe: A Server to Serve files fresh from your disk.
+# QuickServe: A Server to Serve files from your disk.
 
 ## Introduction
 
-- Be the server, share files fresh from your disk, with unlimited space and bandwidth.
-- No intermediaries—give a huge file to your friend without waiting for it to be uploaded to a server first.
+**Share Files Instantly—Directly from Your Device or Let Others Share with You.**
+
+- Your computer = the server. No uploads, no limits.
+- Send huge files fast, skip the cloud middleman.
+- Unlimited space & bandwidth—share freely, without waiting.
 
 ## Features
 
 - User authentication using username and password
-- Browse files and directories on the server
-- Upload files to the server
-- Download files from the server
-- Built-in basic anti-DDoS protection
-- Includes a simple PyQt5 GUI
+- Browse files and directories from the web interface
+- Upload and download files to the server from the web interface
+- Built-in anti-DDoS protection
 
 ## Installation
 
-![Static Badge](https://img.shields.io/badge/Version-v1.0-blue)
+![Static Badge](https://img.shields.io/badge/Version-v2.0-blue)
 
-#### Get the latest release for windows from here. [[Version-v1.0]](https://github.com/8gudbits/pyFlaskyServe/releases)
+#### Get the latest release for windows from here. [[Version-v2.0]](https://github.com/8gudbits/QuickServe/releases)
 
-  - **or:**
+- **or:**
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/8gudbits/pyFlaskyServe.git
+   git clone https://github.com/8gudbits/QuickServe.git
    ```
 
 2. Install the required dependencies using pip:
 
    ```bash
-   pip install Flask Flask-Limiter PyQt5
+   pip install -r requirements.txt
    ```
 
 3. Run the application:
 
-- For command-line interface (CLI) access (for debuging):
+   ```bash
+   python QuickServe.py
+   ```
 
-  ```bash
-  python pyFlaskyServe.py
-  ```
-
-- For graphical user interface (GUI) access:
-
-  ```bash
-  python FlaskyServeGUI.py
-  ```
-
-4. Open your web browser and navigate to `http://localhost:5000` (or any other port if you are using the GUI) to access the file server.
+4. Open your web browser and navigate to `http://localhost:5000` to access the file server.
 
 ## Usage
 
-To get started, simply open the accounts.json file and create user accounts with usernames and passwords like this:
+To get started, simply open the `config.json` file and create user accounts with usernames and passwords like this:
 
 ```json
 {
-  "username_1":"superstrongpasswd",
-  "username_2":"passwordforthisuser",
-  "username_3":"anotherexamplepasswd"
+  "users": {
+    "username_1": "password_for_this_user",
+    "username_2": "super_strong_password",
+    "username_3": "anotherexamplepassword"
+  }
 }
 ```
 
+To change the port number, open the `config.py` file and change the `port` variable to the desired port number like this:
+
+```json
+{
+  "users": {
+    "username_1": "password_for_this_user",
+    "username_2": "super_strong_password",
+    "username_3": "anotherexamplepassword"
+  },
+  "port": 5000
+}
+```
+
+After that, you can run the QuickServe app and the current folder will become the root directory.
+
 - The login page allows users to authenticate using their username and password.
-- After logging in, users can browse and manage files and directories on the server.
-- Use the "Choose File" button to upload files to the server.
+- After logging in, users can browse files and directories on the server.
+- Use the "Upload File" button to upload files to the server.
 - Click on a folder name to navigate into that folder.
 - Click on a file name to download the file.
 - Use the "Go back" button to navigate to the parent directory.
 - Use the "Root" button to navigate back to the root directory.
-- Click on the circular logout button to log out of the application.
+- Click on the logout button to log out of the web interface.
 
 ## Screenshots
 
-<img src="https://github.com/8gudbits/pyFlaskyServe/blob/main/Preview/login_page.png?raw=true" alt="Login page"><br>
-<img src="https://github.com/8gudbits/pyFlaskyServe/blob/main/Preview/file_server.png?raw=true" alt="File server">
+![Login page](Preview/login_page.png)
+![File server](Preview/file_server.png)
+![Error page](Preview/error_page.png)
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/8gudbits/pyFlaskyServe/blob/main/LICENSE).
+This project is licensed under the [MIT License](https://github.com/8gudbits/QuickServe/blob/main/LICENSE).
 
 ---
 

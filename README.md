@@ -89,7 +89,7 @@ After that, you can run the QuickServe app and the current folder will become th
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/8gudbits/QuickServe/blob/main/LICENSE).
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 

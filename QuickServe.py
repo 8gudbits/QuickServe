@@ -81,8 +81,7 @@ class FileEntry:
 # Register the route to serve the favicon.ico file from the root directory
 @app.route("/favicon.ico")
 def serve_favicon():
-    root_dir = os.path.dirname(os.path.abspath(__file__))
-    return send_file(os.path.join(root_dir, "favicon.ico"), mimetype="image/x-icon")
+    return send_file(os.path.join(current_directory, "favicon.ico"), mimetype="image/x-icon")
 
 
 # Route to render the main page
@@ -235,5 +234,6 @@ app.jinja_env.filters["basename"] = os_path_basename
 
 # Run the app on the specified host and port for debugging
 if __name__ == "__main__":
-    # serve(app, host="0.0.0.0", port=server_port)
-    app.run(host="0.0.0.0", port=server_port, debug=True)
+    # app.run(host="0.0.0.0", port=server_port, debug=True)
+    print(f"Starting server on 'http://localhost:{server_port}'...")
+    serve(app, host="0.0.0.0", port=server_port)

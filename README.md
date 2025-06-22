@@ -70,7 +70,7 @@ To change the port number, open the `config.py` file and change the `port` varia
 }
 ```
 
-After that, you can run the QuickServe app and the current folder will become the root directory.
+After that, you can run the QuickServe app and the current folder will become the root directory. `QuickServe` executable, `config.json` and `favicon.ico` files will not be accessible from the web interface. If you want to run the app as a python script, make sure to copy `config.json` and `templates.py` along with the `QuickServe.py` file in the same directory. Don't forget to install the required dependencies using `pip install -r requirements.txt`.
 
 - The login page allows users to authenticate using their username and password.
 - After logging in, users can browse files and directories on the server.

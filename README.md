@@ -17,9 +17,9 @@
 
 ## Installation
 
-![Static Badge](https://img.shields.io/badge/Version-v2.0-blue)
+![Static Badge](https://img.shields.io/badge/Version-v2.1-blue)
 
-#### Get the latest release for windows from here. [[Version-v2.0]](https://github.com/8gudbits/QuickServe/releases)
+#### Get the latest release for windows from here. [[Version-v2.1]](https://github.com/8gudbits/QuickServe/releases)
 
 - **or:**
 
@@ -94,3 +94,4 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 Built with ❤️ using Python and Flask.
+

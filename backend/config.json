@@ -1,9 +1,0 @@
-{
-  "port": 5000,
-  "allow_origins": [
-    "*"
-  ],
-  "users": {
-    "admin": "$2b$12$CcJl4baxQxnBa7uCm2HFfuV5gHcC/pTiXMQ5.yHQdWwzQ.sgSNO4e"
-  }
-}

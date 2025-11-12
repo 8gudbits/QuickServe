@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <title>QuickServe | File Browser</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/home.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <div class="navigation-container">
+        <div class="nav-buttons-row">
+          <button class="btn btn-secondary" id="backBtn" disabled>
+            <i class="fas fa-chevron-left"></i> Go Back
+          </button>
+          <button class="btn btn-secondary" id="rootBtn">
+            <i class="fas fa-home"></i> Root
+          </button>
+          <label for="file-input" class="btn btn-secondary" id="uploadLabel">
+            <i class="fas fa-cloud-upload-alt"></i> Upload
+          </label>
+          <input type="file" id="file-input" name="file" class="file-input" />
+          <a href="login.html" class="btn btn-secondary" id="logoutLink">
+            <i class="fas fa-power-off"></i> Logout
+          </a>
+        </div>
+
+        <div class="server-info-row">
+          <div class="info-box" id="serverInfo">
+            <i class="fas fa-server"></i>
+            <span class="info-box-content" id="serverText">Connecting...</span>
+          </div>
+        </div>
+
+        <div class="current-path-row">
+          <div class="info-box">
+            <i class="fas fa-folder"></i>
+            <span class="path-content" id="currentPathText">/</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <div id="loadingState" class="loading">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading files...</p>
+        </div>
+        <div id="emptyState" class="empty-state" style="display: none">
+          <i class="fas fa-folder-open"></i>
+          <p>This folder is empty</p>
+        </div>
+        <table id="filesTable" style="display: none">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Date Modified</th>
+              <th>Size</th>
+            </tr>
+          </thead>
+          <tbody id="filesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="js/home.js"></script>
+  </body>
+</html>
+

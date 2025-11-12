@@ -1,97 +1,84 @@
-# QuickServe: A Server to Serve files from your disk.
+# QuickServe - FastAPI File Server
 
-## Introduction
+A lightweight, self-hosted file server with web interface for easy file sharing and management.
 
-**Share Files Instantly—Directly from Your Device or Let Others Share with You.**
+![](preview/index.png)
 
-- Your computer = the server. No uploads, no limits.
-- Send huge files fast, skip the cloud middleman.
-- Unlimited space & bandwidth—share freely, without waiting.
+Learn more at: [https://quickserve.noman.qzz.io/](https://8gudbits.github.io/quickserve.noman)
+
+## Quick Start
+
+Get the latest release from [here](https://github.com/8gudbits/QuickServe/releases).
+
+### 1. Configuration
+
+Before running the server, configure it using the built-in configurator:
+
+```bash
+cd backend
+python qconfig.py
+```
+
+This launches an interactive menu where you can:
+
+- Set server port (default: 5000)
+- Configure CORS origins
+- Add user accounts with passwords
+- Manage server settings
+
+### 2. Running the Server
+
+```bash
+python quickserve.py
+```
+
+The server will start and display access URLs for both local and network access.
+
+## Frontend Configuration
+
+### Using Official Frontend
+
+To use the official web interface at `https://quickserve.noman.qzz.io`, you must allow it as a CORS origin in your configuration:
+
+1. Run python `qconfig.py`
+2. Select "Manage CORS Origins"
+3. Add `https://quickserve.noman.qzz.io` to allowed origins
+
+### Self-Hosted Frontend
+
+Alternatively, you can host the frontend files yourself:
+
+1. Serve the `frontend/` directory with any web server
+2. Add your frontend URL to CORS origins in the configuration
+3. Access your self-hosted interface instead
 
 ## Features
 
-- User authentication using username and password
-- Browse files and directories from the web interface
-- Upload and download files to the server from the web interface
-- Built-in anti-DDoS protection
+- Secure Authentication - BCrypt-hashed passwords with SHA-256 pre-hashing
+- File Browser - Web-based file navigation and management
+- File Upload - Upload with duplicate protection
+- File Download - Direct file downloads with proper MIME types
+- CORS Support - Configurable cross-origin resource sharing
 
-## Installation
+## Security Notes
 
-![Static Badge](https://img.shields.io/badge/Version-v2.1-blue)
+- CORS origins should be properly configured for use
+- Default configuration allows all origins (`*`) - restrict this for production
 
-#### Get the latest release for windows from here. [[Version-v2.1]](https://github.com/8gudbits/QuickServe/releases)
+## Requirements
 
-- **or:**
+Install Python dependencies:
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/8gudbits/QuickServe.git
-   ```
-
-2. Install the required dependencies using pip:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Run the application:
-
-   ```bash
-   python QuickServe.py
-   ```
-
-4. Open your web browser and navigate to `http://localhost:5000` to access the file server.
-
-## Usage
-
-To get started, simply open the `config.json` file and create user accounts with usernames and passwords like this:
-
-```json
-{
-  "users": {
-    "username_1": "password_for_this_user",
-    "username_2": "super_strong_password",
-    "username_3": "anotherexamplepassword"
-  }
-}
+```bash
+pip install -r backend/requirements.txt
 ```
 
-To change the port number, open the `config.py` file and change the `port` variable to the desired port number like this:
+## Access
 
-```json
-{
-  "users": {
-    "username_1": "password_for_this_user",
-    "username_2": "super_strong_password",
-    "username_3": "anotherexamplepassword"
-  },
-  "port": 5000
-}
-```
+After starting the server, access it via:
 
-After that, you can run the QuickServe app and the current folder will become the root directory. `QuickServe` executable, `config.json` and `favicon.ico` files will not be accessible from the web interface. If you want to run the app as a python script, make sure to copy `config.json` and `templates.py` along with the `QuickServe.py` file in the same directory. Don't forget to install the required dependencies using `pip install -r requirements.txt`.
+- Local: `http://localhost:{port}`
+- Network: `http://{your-ip}:{port}`
 
-- The login page allows users to authenticate using their username and password.
-- After logging in, users can browse files and directories on the server.
-- Use the "Upload File" button to upload files to the server.
-- Click on a folder name to navigate into that folder.
-- Click on a file name to download the file.
-- Use the "Go back" button to navigate to the parent directory.
-- Use the "Root" button to navigate back to the root directory.
-- Click on the logout button to log out of the web interface.
-
-## Screenshots
-
-![Login page](Preview/login_page.png)
-![File server](Preview/file_server.png)
-![Error page](Preview/error_page.png)
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-Built with ❤️ using Python and Flask.
+Use the web interface to login and manage files.
 

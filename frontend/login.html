@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <title>QuickServe | Login</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/login.css" />
+  </head>
+  <body>
+    <div class="access-panel">
+      <div class="panel-header">
+        <img src="assets/logo_white.png" alt="QuickServe Logo" class="logo" />
+        <h1>Connect to Server</h1>
+      </div>
+      <form class="auth-form" id="loginForm">
+        <div class="input-group">
+          <label for="server">SERVER URL</label>
+          <input
+            type="url"
+            id="server"
+            name="server"
+            placeholder="https://server-address.com"
+            autocomplete="url"
+            required
+          />
+        </div>
+        <div class="input-group">
+          <label for="username">USERNAME</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            autocomplete="username"
+            required
+          />
+        </div>
+        <div class="input-group">
+          <label for="password">PASSWORD</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="toggle-pw" id="togglePassword">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <div class="error-msg" id="errorMessage" style="display: none"></div>
+        <button type="submit" class="submit-btn" id="submitBtn">
+          CONNECT TO SERVER
+        </button>
+        <div class="footer-note">Enter your server details to access files</div>
+        <a href="index.html" class="back-home"> < Back to Home </a>
+      </form>
+    </div>
+    <script src="js/login.js"></script>
+  </body>
+</html>
+

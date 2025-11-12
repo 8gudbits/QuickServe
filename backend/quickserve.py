@@ -4,6 +4,7 @@ import json
 import sys
 import uvicorn
 import bcrypt
+import socket
 
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,7 +33,7 @@ class QuickServe:
     def _load_config(self):
         if not os.path.exists(self.config_file):
             raise SystemExit(
-                "Configuration file not found. Please run config command first."
+                "Configuration file not found. Please run qconfig command first."
             )
 
         try:
@@ -60,6 +61,19 @@ class QuickServe:
         self.app.post("/api/upload")(self.upload_file)
         self.app.get("/api/health")(self.health_check)
         self.app.get("/api/config")(self.get_config)
+
+    def get_local_ip(self):
+        """Get the local IP address of the current machine"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("8.8.8.8", 80))
+                return s.getsockname()[0]
+        except:
+            try:
+                hostname = socket.gethostname()
+                return socket.gethostbyname(hostname)
+            except:
+                return "Unable to determine IP"
 
     def get_navigation_path(self, absolute_path):
         try:
@@ -139,8 +153,6 @@ class QuickServe:
             return False
 
         stored_hash = users[username]
-        # The stored hash is bcrypt(salt + SHA256(password))
-        # The client sends SHA256(password), so we need to verify it against the stored bcrypt hash
         try:
             return bcrypt.checkpw(password_sha256.encode(), stored_hash.encode())
         except:
@@ -225,10 +237,43 @@ class QuickServe:
         }
 
     def run(self):
-        print(f"Starting QuickServe API on http://localhost:{self.port}")
-        print(f"Server root: {self.SERVER_ROOT}")
-        print(f"CORS allowed origins: {self.allow_origins}")
-        uvicorn.run(self.app, host="0.0.0.0", port=self.port)
+        local_ip = self.get_local_ip()
+
+        print("=" * 60)
+        print("QUICKSERVE FILE SERVER")
+        print("=" * 60)
+        print(f"PORT:            {self.port}")
+        print(f"ROOT DIRECTORY:  {self.SERVER_ROOT}")
+        print(f"CORS ORIGINS:    {self.allow_origins}")
+        print("-" * 60)
+        print("ACCESS URLs:")
+        print(f"Local:           http://localhost:{self.port}")
+        print(f"Network:         http://0.0.0.0:{self.port}")
+        if local_ip != "Unable to determine IP":
+            print(f"Local Network:   http://{local_ip}:{self.port}")
+        print("-" * 60)
+        print("Use the Local URL for access from this machine")
+        print("Use the Local Network URL for access from other devices")
+        print("on the same network")
+        print("=" * 60)
+
+        log_config = {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "loggers": {
+                "uvicorn": {"level": "WARNING", "handlers": []},
+                "uvicorn.error": {"level": "WARNING", "handlers": []},
+                "uvicorn.access": {"level": "WARNING", "handlers": []},
+            },
+        }
+
+        uvicorn.run(
+            self.app,
+            host="0.0.0.0",
+            port=self.port,
+            log_config=log_config,
+            access_log=False,
+        )
 
 
 class LoginRequest(BaseModel):

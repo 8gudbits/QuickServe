@@ -10,6 +10,18 @@ Learn more at: [https://quickserve.noman.qzz.io/](https://8gudbits.github.io/qui
 
 Get the latest release from [here](https://github.com/8gudbits/QuickServe/releases).
 
+_**NOTE:** This guide assumes you are using the source version of QuickServe (Python scripts). If you downloaded a compiled release (`.exe` for Windows or ELF binary for Linux), the steps are the same - simply run the binary directly from your terminal (`cmd` or `bash`) instead of using `python` to launch the scripts._
+
+## Requirements
+
+Install Python dependencies:
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+**Note for binary users**: If you downloaded a compiled release (`.exe` for Windows or ELF binary for Linux), you can skip this step. The binaries already include everything needed - just run them directly from your terminal (`cmd` or `bash`).
+
 ### 1. Configuration
 
 Before running the server, configure it using the built-in configurator:
@@ -65,14 +77,6 @@ Alternatively, you can host the frontend files yourself:
 - CORS origins should be properly configured for use
 - Default configuration allows all origins (`*`) - restrict this for production
 
-## Requirements
-
-Install Python dependencies:
-
-```bash
-pip install -r backend/requirements.txt
-```
-
 ## Access
 
 After starting the server, access it via:
@@ -81,4 +85,10 @@ After starting the server, access it via:
 - Network: `http://{your-ip}:{port}`
 
 Use the web interface to login and manage files.
+
+## Screenshots
+
+![](preview/login.png)
+![](preview/home.png)
+![](preview/error.png)
 

@@ -21,6 +21,24 @@
           <button class="btn btn-secondary" id="rootBtn">
             <i class="fas fa-home"></i> Root
           </button>
+          <div class="search-container">
+            <button class="btn btn-secondary" id="searchBtn">
+              <i class="fas fa-search"></i> Search
+            </button>
+            <div id="searchBox" class="search-box">
+              <div class="search-input-row">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Enter filename to search..."
+                />
+                <button class="btn btn-secondary" id="executeSearch">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+              <button class="btn btn-secondary" id="closeSearch">Close</button>
+            </div>
+          </div>
           <label for="file-input" class="btn btn-secondary" id="uploadLabel">
             <i class="fas fa-cloud-upload-alt"></i> Upload
           </label>

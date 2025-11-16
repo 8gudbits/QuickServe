@@ -5,12 +5,13 @@ import sys
 import uvicorn
 import bcrypt
 import socket
+import fnmatch
 
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 
 
 class QuickServe:
@@ -61,6 +62,7 @@ class QuickServe:
         self.app.post("/api/upload")(self.upload_file)
         self.app.get("/api/health")(self.health_check)
         self.app.get("/api/config")(self.get_config)
+        self.app.get("/api/search")(self.search_files_route)  # Add search route
 
     def get_local_ip(self):
         """Get the local IP address of the current machine"""
@@ -235,6 +237,66 @@ class QuickServe:
             "users_count": len(self.config.get("users", {})),
             "allow_origins": self.config.get("allow_origins", ["*"]),
         }
+
+    def search_files(self, search_path: str, pattern: str) -> List[Dict]:
+        """Search for files recursively in the directory tree"""
+        results = []
+
+        try:
+            absolute_path = self.get_absolute_path(search_path)
+
+            if not os.path.exists(absolute_path) or not os.path.isdir(absolute_path):
+                return results
+
+            for root, dirs, files in os.walk(absolute_path):
+                dirs[:] = [d for d in dirs]
+
+                for file in files:
+                    if fnmatch.fnmatch(file.lower(), f"*{pattern.lower()}*"):
+                        file_path = os.path.join(root, file)
+                        try:
+                            rel_path = os.path.relpath(file_path, absolute_path)
+                            nav_path = self.get_navigation_path(file_path)
+
+                            results.append(
+                                {
+                                    "name": file,
+                                    "path": nav_path,
+                                    "relative_path": rel_path,
+                                    "type": "file",
+                                    "date_modified": self.get_file_date_modified(
+                                        file_path
+                                    ),
+                                    "size": self.get_file_size(file_path),
+                                    "directory": os.path.dirname(rel_path),
+                                }
+                            )
+                        except (ValueError, OSError):
+                            continue
+
+        except ValueError:
+            return []
+
+        return sorted(results, key=lambda x: x["name"].lower())
+
+    async def search_files_route(self, path: str = "", pattern: str = ""):
+        """API endpoint for file search"""
+        if not pattern or len(pattern.strip()) < 2:
+            raise HTTPException(
+                status_code=400,
+                detail="Search pattern must be at least 2 characters long",
+            )
+
+        try:
+            results = self.search_files(path, pattern.strip())
+            return {
+                "results": results,
+                "search_path": path,
+                "pattern": pattern,
+                "count": len(results),
+            }
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied")
 
     def run(self):
         local_ip = self.get_local_ip()

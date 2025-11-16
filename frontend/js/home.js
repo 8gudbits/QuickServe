@@ -203,6 +203,126 @@ class QuickServeClient {
     }
   }
 
+  async searchFiles(pattern) {
+    if (!pattern || pattern.length < 2) {
+      this.showError("Please enter at least 2 characters to search");
+      return;
+    }
+
+    this.showLoading();
+    const currentPath = this.getPathFromURL();
+
+    try {
+      const response = await fetch(
+        `${this.serverUrl}/api/search?path=${encodeURIComponent(
+          currentPath
+        )}&pattern=${encodeURIComponent(pattern)}`,
+        {
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        this.displaySearchResults(data, pattern);
+      } else if (response.status === 401) {
+        this.handleAuthError();
+      } else {
+        throw new Error("Search failed");
+      }
+    } catch (error) {
+      this.showError("Search failed - please try again");
+      this.hideLoading();
+    }
+  }
+
+  displaySearchResults(data, pattern) {
+    const filesTable = document.getElementById("filesTable");
+    const filesTableBody = document.getElementById("filesTableBody");
+    const emptyState = document.getElementById("emptyState");
+    const currentPathText = document.getElementById("currentPathText");
+
+    const searchPath = data.search_path || "";
+    let displayPath = searchPath
+      ? `${searchPath} (Search: "${pattern}")`
+      : `Search: "${pattern}"`;
+    currentPathText.textContent = displayPath;
+
+    filesTableBody.innerHTML = "";
+
+    if (data.results.length === 0) {
+      filesTable.style.display = "none";
+      emptyState.style.display = "block";
+      emptyState.innerHTML = `
+        <i class="fas fa-search"></i>
+        <p>No files found matching "${pattern}"</p>
+      `;
+      this.hideLoading();
+      this.updateNavigation(searchPath);
+      return;
+    }
+
+    const headerRow = document.createElement("tr");
+    headerRow.className = "search-header-row";
+    headerRow.innerHTML = `
+      <td colspan="3">
+        <i class="fas fa-search"></i> Found ${data.count} files matching "${pattern}"
+        <button class="clear-search-btn" id="clearSearch">
+          Clear Search
+        </button>
+      </td>
+    `;
+    filesTableBody.appendChild(headerRow);
+
+    data.results.forEach((file) => {
+      const row = document.createElement("tr");
+
+      const nameCell = document.createElement("td");
+      const link = document.createElement("a");
+      link.href = "#";
+
+      let fileContent = `<i class="fas fa-file"></i> ${file.name}`;
+      if (file.directory && file.directory !== ".") {
+        fileContent += `<span class="file-directory">in ${file.directory}</span>`;
+      }
+
+      link.innerHTML = fileContent;
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.downloadFile(file.path);
+      });
+
+      nameCell.appendChild(link);
+      row.appendChild(nameCell);
+
+      const dateCell = document.createElement("td");
+      dateCell.textContent = file.date_modified;
+      row.appendChild(dateCell);
+
+      const sizeCell = document.createElement("td");
+      sizeCell.textContent = this.formatFileSize(file.size);
+      row.appendChild(sizeCell);
+
+      filesTableBody.appendChild(row);
+    });
+
+    filesTable.style.display = "table";
+    emptyState.style.display = "none";
+    this.hideLoading();
+    this.updateNavigation(searchPath);
+
+    setTimeout(() => {
+      const clearSearchBtn = document.getElementById("clearSearch");
+      if (clearSearchBtn) {
+        clearSearchBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.loadFiles(searchPath);
+        });
+      }
+    }, 0);
+  }
+
   getAuthHeaders(isJson = true) {
     const headers = {};
     if (isJson) {
@@ -295,25 +415,56 @@ class QuickServeClient {
     }, 300);
   }
 
-  showTempMessage(message) {
-    const uploadLabel = document.getElementById("uploadLabel");
-    const originalText = uploadLabel.innerHTML;
-
-    this.showSuccess(message);
-
-    uploadLabel.innerHTML = `<i class="fas fa-check"></i> Uploaded`;
-    uploadLabel.style.opacity = "0.7";
-
-    setTimeout(() => {
-      uploadLabel.innerHTML = originalText;
-      uploadLabel.style.opacity = "1";
-    }, 1500);
-  }
-
   updateNavigation(currentPath) {
     const backBtn = document.getElementById("backBtn");
     const parentPath = this.getParentPath(currentPath);
     backBtn.disabled = !currentPath || currentPath === "";
+  }
+
+  setupSearch() {
+    const searchBtn = document.getElementById("searchBtn");
+    const searchBox = document.getElementById("searchBox");
+    const searchInput = document.getElementById("searchInput");
+    const executeSearch = document.getElementById("executeSearch");
+    const closeSearch = document.getElementById("closeSearch");
+
+    const showSearchBox = () => {
+      searchBox.style.display = "block";
+      setTimeout(() => searchInput.focus(), 100);
+    };
+
+    const hideSearchBox = () => {
+      searchBox.style.display = "none";
+      searchInput.value = "";
+    };
+
+    const performSearch = () => {
+      const pattern = searchInput.value.trim();
+      if (pattern) {
+        this.searchFiles(pattern);
+        hideSearchBox();
+      }
+    };
+
+    searchBtn.addEventListener("click", showSearchBox);
+
+    executeSearch.addEventListener("click", performSearch);
+
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        performSearch();
+      }
+    });
+
+    closeSearch.addEventListener("click", hideSearchBox);
+
+    if (window.innerWidth > 768) {
+      document.addEventListener("click", (e) => {
+        if (!searchBox.contains(e.target) && !searchBtn.contains(e.target)) {
+          hideSearchBox();
+        }
+      });
+    }
   }
 
   setupEventListeners() {
@@ -345,6 +496,8 @@ class QuickServeClient {
       sessionStorage.clear();
       window.location.href = "login.html";
     });
+
+    this.setupSearch();
 
     window.addEventListener("popstate", (event) => {
       const path = event.state ? event.state.path : this.getPathFromURL();

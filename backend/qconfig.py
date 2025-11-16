@@ -22,7 +22,7 @@ class QuickServeConfig:
             except:
                 print("Existing config file is corrupted. Creating new configuration.")
 
-        return {"port": 5000, "allow_origins": ["*"], "users": {}}
+        return {"port": 5000, "allow_origins": [], "users": {}}
 
     def hash_password(self, password):
         sha256_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -96,27 +96,21 @@ class QuickServeConfig:
             except ValueError:
                 print("Invalid port number. Using default.")
 
-        print("\nCORS Configuration:")
-        print("1. Allow all origins (*) - For development")
-        print("2. Allow specific origins - For production")
-        cors_choice = input("Choose option (1-2) [1]: ").strip() or "1"
-
-        if cors_choice == "2":
-            origins = []
-            print(
-                "Enter allowed origins (e.g., http://localhost:3000, https://example.com)"
-            )
-            print("Press Enter twice when done:")
-            while True:
-                origin = input("Origin: ").strip()
-                if not origin:
-                    break
-                origins.append(origin)
-            self.config["allow_origins"] = origins
-            print(f"Allowed origins: {origins}")
+        print("\nCORS Configuration (required for frontend access):")
+        print("Authentication requires specific frontend URLs.")
+        if input("Use default frontend URLs? (Y/n): ").strip().lower() in [
+            "",
+            "y",
+            "yes",
+        ]:
+            default_origins = [
+                "https://quickserve.noman.qzz.io",
+                "https://8gudbits.github.io",
+            ]
+            self.config["allow_origins"] = default_origins
+            print("Default origins set for official QuickServe frontends")
         else:
-            self.config["allow_origins"] = ["*"]
-            print("CORS set to allow all origins")
+            print("You'll need to configure CORS origins manually in the main menu.")
 
         print("\nUser Setup:")
         if input("Add a user account? (y/N): ").lower() == "y":
@@ -247,72 +241,105 @@ class QuickServeConfig:
             self.clear_screen()
             print("CORS ORIGIN MANAGEMENT\n")
 
-            origins = self.config.get("allow_origins", ["*"])
+            origins = self.config.get("allow_origins", [])
             print("Current allowed origins:")
-            if origins == ["*"]:
-                print("  * (All origins allowed)")
+            if not origins:
+                print("  No origins configured (server will not work with frontend)")
             else:
                 for i, origin in enumerate(origins, 1):
                     print(f"  {i}. {origin}")
 
             print("\nOptions:")
-            print("1. Add Origin")
-            print("2. Remove Origin")
-            print("3. Allow All Origins (*)")
+            print("0. What is CORS? (Help)")
+            print("1. Use Default (Recommended)")
+            print("2. Add Custom Origin")
+            print("3. Remove Origin")
             print("4. Clear All Origins")
             print("5. Back to Main Menu")
 
-            choice = input("\nEnter your choice (1-5): ").strip()
+            choice = input("\nEnter your choice (0-5): ").strip()
 
-            if choice == "1":
-                self.add_origin()
+            if choice == "0":
+                self.cors_help()
+            elif choice == "1":
+                self.use_default_origins()
             elif choice == "2":
-                self.remove_origin()
+                self.add_origin()
             elif choice == "3":
-                self.config["allow_origins"] = ["*"]
-                print("All origins now allowed (*)")
-                input("Press Enter to continue...")
+                self.remove_origin()
             elif choice == "4":
                 if input("Clear all origins? (y/N): ").lower() == "y":
                     self.config["allow_origins"] = []
-                    print("All origins cleared")
+                    print("All origins cleared - server will not work with frontend!")
                 input("Press Enter to continue...")
             elif choice == "5":
                 break
             else:
                 input("Invalid choice. Press Enter to continue...")
 
+    def cors_help(self):
+        self.clear_screen()
+        print("CORS HELP - What is CORS?\n")
+        print("CORS (Cross-Origin Resource Sharing) controls which websites")
+        print("can access your file server from a web browser.\n")
+        print("IMPORTANT: With authentication enabled:")
+        print("• Wildcard '*' origins are BLOCKED by browsers")
+        print("• You must specify exact frontend URLs\n")
+        print("Recommended: Use 'Use Default' option which includes:")
+        print("• https://quickserve.noman.qzz.io")
+        print("• https://8gudbits.github.io")
+        print("\nIf hosting your own frontend, add your exact website URL.")
+        input("\nPress Enter to continue...")
+
+    def use_default_origins(self):
+        print("\nSETTING DEFAULT ORIGINS")
+        default_origins = [
+            "https://quickserve.noman.qzz.io",
+            "https://8gudbits.github.io",
+        ]
+
+        self.config["allow_origins"] = default_origins
+        print("Default origins set:")
+        for origin in default_origins:
+            print(f"  ✓ {origin}")
+        print("\nThese are the official QuickServe frontend URLs.")
+        input("Press Enter to continue...")
+
     def add_origin(self):
-        print("\nADD CORS ORIGIN")
-        origin = input("Enter origin (e.g., http://localhost:3000): ").strip()
+        print("\nADD CUSTOM ORIGIN")
+        print("Format examples:")
+        print("• https://yourwebsite.com")
+        print("• http://localhost:3000")
+        print("• https://subdomain.example.com")
+
+        origin = input("\nEnter origin: ").strip()
 
         if not origin:
             print("Origin cannot be empty")
+            input("Press Enter to continue...")
             return
 
-        if origin == "*":
-            self.config["allow_origins"] = ["*"]
-            print("All origins allowed (*)")
+        # Basic validation
+        if not origin.startswith(("http://", "https://")):
+            print("Error: Origin must start with http:// or https://")
+            input("Press Enter to continue...")
             return
 
         if "allow_origins" not in self.config:
             self.config["allow_origins"] = []
 
-        if self.config["allow_origins"] == ["*"]:
-            self.config["allow_origins"] = []
-
-        if origin not in self.config["allow_origins"]:
+        if origin in self.config["allow_origins"]:
+            print("Origin already exists")
+        else:
             self.config["allow_origins"].append(origin)
             print(f"Origin '{origin}' added")
-        else:
-            print("Origin already exists")
 
         input("Press Enter to continue...")
 
     def remove_origin(self):
         origins = self.config.get("allow_origins", [])
-        if not origins or origins == ["*"]:
-            input("No specific origins to remove. Press Enter to continue...")
+        if not origins:
+            input("No origins to remove. Press Enter to continue...")
             return
 
         print("\nREMOVE CORS ORIGIN")
@@ -339,10 +366,10 @@ class QuickServeConfig:
 
         print(f"Port: {self.config.get('port', 5000)}")
 
-        origins = self.config.get("allow_origins", ["*"])
+        origins = self.config.get("allow_origins", [])
         print("Allowed Origins:")
-        if origins == ["*"]:
-            print("  * (All origins)")
+        if not origins:
+            print("  None configured (server will not work with frontend)")
         else:
             for origin in origins:
                 print(f"  {origin}")

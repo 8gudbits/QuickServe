@@ -5,6 +5,10 @@ const loginForm = document.getElementById("loginForm");
 const errorMessage = document.getElementById("errorMessage");
 const submitBtn = document.getElementById("submitBtn");
 
+document.addEventListener("DOMContentLoaded", function () {
+  resetSubmitButton();
+});
+
 togglePassword.addEventListener("click", function () {
   const type =
     password.getAttribute("type") === "password" ? "text" : "password";
@@ -88,6 +92,7 @@ function showError(message) {
 
 function resetSubmitButton() {
   submitBtn.disabled = false;
+  submitBtn.textContent = "CONNECT TO SERVER";
   submitBtn.innerHTML = "CONNECT TO SERVER";
 }
 
@@ -96,6 +101,15 @@ window.addEventListener("load", function () {
   const savedServer = sessionStorage.getItem("quickserve_server");
   if (savedServer) {
     document.getElementById("server").value = savedServer;
+  }
+});
+
+window.addEventListener("pageshow", function (event) {
+  if (
+    event.persisted ||
+    (window.performance && window.performance.navigation.type === 2)
+  ) {
+    resetSubmitButton();
   }
 });
 

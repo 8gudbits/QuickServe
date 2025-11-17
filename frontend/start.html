@@ -46,9 +46,7 @@
           >
             <i class="fas fa-download"></i> Download QuickServe
           </a>
-          <p style="margin-top: 1rem">
-            Get the latest release for your operating system
-          </p>
+          <p>Get the latest release for your operating system</p>
         </div>
 
         <div class="getting-started">
@@ -78,10 +76,16 @@
               <p>
                 If you're using the source code version, ensure you have Python
                 + Pip installed and install the required dependencies:
-              </p>
+              </p><br>
 
               <div class="code-block">
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <button
+                  class="copy-btn"
+                  onclick="copyCode(this)"
+                  aria-label="Copy code to clipboard"
+                >
+                  Copy
+                </button>
                 <code>pip install -r backend/requirements.txt</code>
               </div>
             </div>
@@ -99,12 +103,18 @@
               </p>
 
               <div class="code-block">
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <button
+                  class="copy-btn"
+                  onclick="copyCode(this)"
+                  aria-label="Copy code to clipboard"
+                >
+                  Copy
+                </button>
                 <code>cd backend python qconfig.py</code>
               </div>
 
               <p>This launches an interactive menu where you can:</p>
-              <ul style="margin-left: 2rem; margin-bottom: 1.5rem">
+              <ul class="instruction-list">
                 <li>Set server port (default: 5000)</li>
                 <li>Configure CORS origins</li>
                 <li>Add user accounts with passwords</li>
@@ -130,7 +140,13 @@
               <p class="step-description">Start your QuickServe file server:</p>
 
               <div class="code-block">
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <button
+                  class="copy-btn"
+                  onclick="copyCode(this)"
+                  aria-label="Copy code to clipboard"
+                >
+                  Copy
+                </button>
                 <code>python quickserve.py</code>
               </div>
 
@@ -158,28 +174,27 @@
                 as a CORS origin in your configuration:
               </p>
 
-              <div class="code-block">
-                <code>1. Run python qconfig.py</code>
-                <code>2. Select "Manage CORS Origins"</code>
-                <code
-                  >3. Add "https://quickserve.noman.qzz.io" to allowed
-                  origins</code
-                >
-              </div>
+              <ol class="instruction-list">
+                <li>Run <code>python qconfig.py</code></li>
+                <li>Select "Manage CORS Origins"</li>
+                <li>
+                  Add <code>https://quickserve.noman.qzz.io</code> to allowed
+                  origins
+                </li>
+              </ol>
 
               <h3>Option 2: Self-Hosted Frontend</h3>
               <p>Alternatively, you can host the frontend files yourself:</p>
 
-              <div class="code-block">
-                <code
-                  >1. Serve the "frontend/" directory with any web server</code
-                >
-                <code
-                  >2. Add your frontend URL to CORS origins in the
-                  configuration</code
-                >
-                <code>3. Access your self-hosted interface instead</code>
-              </div>
+              <ol class="instruction-list">
+                <li>
+                  Serve the <code>frontend/</code> directory with any web server
+                </li>
+                <li>
+                  Add your frontend URL to CORS origins in the configuration
+                </li>
+                <li>Access your self-hosted interface instead</li>
+              </ol>
             </div>
           </div>
 
@@ -194,7 +209,13 @@
               </p>
 
               <div class="code-block">
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <button
+                  class="copy-btn"
+                  onclick="copyCode(this)"
+                  aria-label="Copy code to clipboard"
+                >
+                  Copy
+                </button>
                 <code>Local: http://localhost:{port}</code>
                 <code>Network: http://{your-ip}:{port}</code>
               </div>
@@ -205,18 +226,20 @@
         </div>
 
         <div class="next-steps">
-          <h2>Need Help?</h2>
-          <p>
-            If you encounter any issues or have questions, check out the GitHub
-            repository for documentation and support.
-          </p>
-          <a
-            href="https://github.com/8gudbits/QuickServe"
-            class="cta-button"
-            target="_blank"
-          >
-            <i class="fab fa-github"></i> Visit GitHub Repository
-          </a>
+          <div class="next-steps-content">
+            <h2>Need Help?</h2>
+            <p>
+              If you encounter any issues or have questions, check out the
+              GitHub repository for documentation and support.
+            </p>
+            <a
+              href="https://github.com/8gudbits/QuickServe"
+              class="cta-button"
+              target="_blank"
+            >
+              <i class="fab fa-github"></i> Visit GitHub Repository
+            </a>
+          </div>
         </div>
       </div>
     </main>

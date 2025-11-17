@@ -244,6 +244,10 @@ nav {
     margin: 3rem 0;
 }
 
+.download-section p {
+    margin-top: 1rem;
+}
+
 .download-btn {
     background: var(--gradient);
     color: white;
@@ -264,35 +268,22 @@ nav {
     box-shadow: 0 6px 20px rgba(90, 61, 104, 0.4);
 }
 
-.screenshots {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin: 3rem 0;
+.instruction-list {
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
 }
 
-.screenshot {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+.instruction-list li {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
 }
 
-.screenshot:hover {
-    transform: translateY(-5px);
-}
-
-.screenshot img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.screenshot-caption {
-    padding: 1rem;
-    background: white;
-    text-align: center;
-    font-weight: 500;
+.instruction-list code {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
 }
 
 .next-steps {
@@ -301,18 +292,24 @@ nav {
     border-radius: 15px;
     padding: 3rem;
     margin-top: 4rem;
-    text-align: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
-.next-steps h2 {
+.next-steps-content {
+    text-align: center;
+}
+
+.next-steps-content h2 {
     margin-bottom: 1.5rem;
     color: var(--accent-1);
 }
 
-.next-steps p {
+.next-steps-content p {
     margin-bottom: 2rem;
     font-size: 1.1rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 footer {

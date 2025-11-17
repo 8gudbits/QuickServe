@@ -2,17 +2,17 @@
 
 A lightweight, self-hosted file server with web interface for easy file sharing and management.
 
-![](preview/index.png)
-
 Learn more at: [https://quickserve.noman.qzz.io/](https://8gudbits.github.io/quickserve.noman)
+
+![](preview/index.png)
 
 ## Quick Start
 
-Get the latest release from [here](https://github.com/8gudbits/QuickServe/releases).
+Get the latest release from the [releases section](https://github.com/8gudbits/QuickServe/releases).
 
-_**NOTE:** This guide assumes you are using the source version of QuickServe (Python scripts). If you downloaded a compiled release (`.exe` for Windows or ELF binary for Linux), the steps are the same - simply run the binary directly from your terminal (`cmd` or `bash`) instead of using `python` to launch the scripts._
+_**NOTE:** This guide assumes you are using the source version of QuickServe (Python scripts). If you downloaded a compiled release (`.exe` for Windows or binary for Linux), the steps are the same - simply run the binary directly from your terminal (`cmd/powershell` or `bash`) instead of using `python` to launch the scripts._
 
-## Requirements
+## Requirements For Source Code Users:
 
 Install Python dependencies:
 
@@ -20,7 +20,7 @@ Install Python dependencies:
 pip install -r backend/requirements.txt
 ```
 
-**Note for binary users**: If you downloaded a compiled release (`.exe` for Windows or ELF binary for Linux), you can skip this step. The binaries already include everything needed - just run them directly from your terminal (`cmd` or `bash`).
+**Note for binary users**: If you downloaded a compiled release (`.exe` for Windows or binary for Linux), you can skip this step. The binaries already include everything needed - just run them directly from your terminal (`cmd/powershell` or `bash`).
 
 ### 1. Configuration
 
@@ -44,7 +44,7 @@ This launches an interactive menu where you can:
 python quickserve.py
 ```
 
-The server will start and display access URLs for both local and network access.
+The server will start and display access URLs for both local computer and network access.
 
 ## Frontend Configuration
 
@@ -75,7 +75,7 @@ Alternatively, you can host the frontend files yourself:
 ## Security Notes
 
 - CORS origins should be properly configured for use
-- Default configuration allows all origins (`*`) - restrict this for production
+- Default configuration allows only [official login portal](https://8gudbits.github.io/quickserve.noman/login)
 
 ## Access
 

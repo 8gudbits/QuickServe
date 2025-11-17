@@ -6,6 +6,7 @@ import uvicorn
 import bcrypt
 import socket
 import fnmatch
+import mimetypes
 
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +17,7 @@ from typing import List, Dict
 
 class QuickServe:
     def __init__(self):
-        self.app = FastAPI(title="QuickServe API", version="2.0")
+        self.app = FastAPI(title="QuickServe API", version="3.1.0")
         self._setup_paths()
         self._load_config()
         self._setup_cors()
@@ -59,13 +60,13 @@ class QuickServe:
         self.app.post("/api/login")(self.login)
         self.app.get("/api/files")(self.list_files)
         self.app.get("/api/download")(self.download_file)
+        self.app.get("/api/preview")(self.preview_file)
         self.app.post("/api/upload")(self.upload_file)
         self.app.get("/api/health")(self.health_check)
         self.app.get("/api/config")(self.get_config)
-        self.app.get("/api/search")(self.search_files_route)  # Add search route
+        self.app.get("/api/search")(self.search_files_route)
 
     def get_local_ip(self):
-        """Get the local IP address of the current machine"""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.connect(("8.8.8.8", 80))
@@ -77,60 +78,63 @@ class QuickServe:
             except:
                 return "Unable to determine IP"
 
-    def get_navigation_path(self, absolute_path):
-        try:
-            rel_path = os.path.relpath(absolute_path, self.SERVER_ROOT)
-            if rel_path.startswith("..") or rel_path == ".":
-                return ""
-            nav_path = rel_path.replace("\\", "/")
-            return nav_path if nav_path != "." else ""
-        except ValueError:
+    def clean_path(self, path):
+        if not path or path == "/":
             return ""
+        path = path.strip().lstrip("/")
+        return path.replace("\\", "/")
 
-    def get_absolute_path(self, nav_path):
-        if not nav_path:
+    def get_absolute_path(self, clean_path):
+        if not clean_path:
             return self.SERVER_ROOT
 
-        absolute_path = os.path.join(self.SERVER_ROOT, nav_path)
+        absolute_path = os.path.join(self.SERVER_ROOT, clean_path)
+        absolute_path = os.path.normpath(absolute_path)
+
         if not absolute_path.startswith(self.SERVER_ROOT):
             raise ValueError("Path traversal detected")
         return absolute_path
 
-    def get_parent_navigation_path(self, nav_path):
-        if not nav_path:
+    def get_parent_path(self, clean_path):
+        if not clean_path:
             return ""
-        parts = nav_path.split("/")
+        parts = clean_path.split("/")
         if len(parts) <= 1:
             return ""
         return "/".join(parts[:-1])
 
-    def get_files_in_directory(self, nav_path):
+    def get_files_in_directory(self, clean_path):
         folders = []
         files = []
 
         try:
-            absolute_path = self.get_absolute_path(nav_path)
+            absolute_path = self.get_absolute_path(clean_path)
 
             if os.path.exists(absolute_path) and os.path.isdir(absolute_path):
                 for entry in sorted(os.listdir(absolute_path), key=lambda x: x.lower()):
                     entry_path = os.path.join(absolute_path, entry)
-                    entry_nav_path = self.get_navigation_path(entry_path)
 
                     if os.path.isdir(entry_path):
+                        entry_clean_path = self.clean_path(
+                            os.path.relpath(entry_path, self.SERVER_ROOT)
+                        )
                         folders.append(
                             FileEntry(
                                 name=entry,
-                                path=entry_nav_path,
+                                path=entry_clean_path,
                                 type="folder",
                                 date_modified=self.get_file_date_modified(entry_path),
                                 size=self.get_file_size(entry_path),
                             )
                         )
                     elif os.path.isfile(entry_path):
+                        entry_clean_path = self.clean_path(
+                            os.path.relpath(entry_path, self.SERVER_ROOT)
+                        )
                         files.append(
                             FileEntry(
                                 name=entry,
-                                path=entry_nav_path,
+                                path=entry_clean_path,
                                 type="file",
                                 date_modified=self.get_file_date_modified(entry_path),
                                 size=self.get_file_size(entry_path),
@@ -169,24 +173,25 @@ class QuickServe:
 
     async def list_files(self, path: str = ""):
         try:
-            absolute_path = self.get_absolute_path(path)
+            clean_path = self.clean_path(path)
+            absolute_path = self.get_absolute_path(clean_path)
 
             if not os.path.exists(absolute_path) or not os.path.isdir(absolute_path):
                 raise HTTPException(status_code=404, detail="Directory not found")
 
-            files = self.get_files_in_directory(path)
-            current_dir_nav = self.get_navigation_path(absolute_path)
-            parent_dir_nav = self.get_parent_navigation_path(current_dir_nav)
+            files = self.get_files_in_directory(clean_path)
+            parent_path = self.get_parent_path(clean_path)
 
             return DirectoryResponse(
-                current_dir=current_dir_nav, parent_dir=parent_dir_nav, files=files
+                current_dir=clean_path, parent_dir=parent_path, files=files
             )
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
 
-    async def download_file(self, file_path: str):
+    async def download_file(self, path: str):
         try:
-            absolute_path = self.get_absolute_path(file_path)
+            clean_path = self.clean_path(path)
+            absolute_path = self.get_absolute_path(clean_path)
 
             if not os.path.exists(absolute_path) or not os.path.isfile(absolute_path):
                 raise HTTPException(status_code=404, detail="File not found")
@@ -198,9 +203,34 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
 
+    async def preview_file(self, path: str):
+        try:
+            clean_path = self.clean_path(path)
+            absolute_path = self.get_absolute_path(clean_path)
+
+            if not os.path.exists(absolute_path) or not os.path.isfile(absolute_path):
+                raise HTTPException(status_code=404, detail="File not found")
+
+            filename = os.path.basename(absolute_path)
+            media_type, _ = mimetypes.guess_type(filename)
+
+            if media_type is None:
+                media_type = "application/octet-stream"
+
+            headers = {}
+            if media_type.startswith(("text/", "image/", "application/pdf")):
+                headers["Content-Disposition"] = f'inline; filename="{filename}"'
+            else:
+                headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+            return FileResponse(absolute_path, media_type=media_type, headers=headers)
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied")
+
     async def upload_file(self, path: str = Form(...), file: UploadFile = File(...)):
         try:
-            absolute_path = self.get_absolute_path(path)
+            clean_path = self.clean_path(path)
+            absolute_path = self.get_absolute_path(clean_path)
 
             if not os.path.exists(absolute_path) or not os.path.isdir(absolute_path):
                 raise HTTPException(status_code=404, detail="Directory not found")
@@ -239,11 +269,11 @@ class QuickServe:
         }
 
     def search_files(self, search_path: str, pattern: str) -> List[Dict]:
-        """Search for files recursively in the directory tree"""
         results = []
 
         try:
-            absolute_path = self.get_absolute_path(search_path)
+            clean_path = self.clean_path(search_path)
+            absolute_path = self.get_absolute_path(clean_path)
 
             if not os.path.exists(absolute_path) or not os.path.isdir(absolute_path):
                 return results
@@ -255,13 +285,15 @@ class QuickServe:
                     if fnmatch.fnmatch(file.lower(), f"*{pattern.lower()}*"):
                         file_path = os.path.join(root, file)
                         try:
+                            file_clean_path = self.clean_path(
+                                os.path.relpath(file_path, self.SERVER_ROOT)
+                            )
                             rel_path = os.path.relpath(file_path, absolute_path)
-                            nav_path = self.get_navigation_path(file_path)
 
                             results.append(
                                 {
                                     "name": file,
-                                    "path": nav_path,
+                                    "path": file_clean_path,
                                     "relative_path": rel_path,
                                     "type": "file",
                                     "date_modified": self.get_file_date_modified(
@@ -280,7 +312,6 @@ class QuickServe:
         return sorted(results, key=lambda x: x["name"].lower())
 
     async def search_files_route(self, path: str = "", pattern: str = ""):
-        """API endpoint for file search"""
         if not pattern or len(pattern.strip()) < 2:
             raise HTTPException(
                 status_code=400,

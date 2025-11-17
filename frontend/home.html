@@ -15,18 +15,69 @@
     <div class="main-container">
       <div class="navigation-container">
         <div class="nav-buttons-row">
-          <button class="btn btn-secondary" id="backBtn" disabled>
-            <i class="fas fa-chevron-left"></i> Go Back
+          <button
+            class="btn btn-secondary"
+            id="backBtn"
+            disabled
+            aria-label="Go Back"
+          >
+            <i class="fas fa-chevron-left"></i> <span>Go Back</span>
           </button>
-          <button class="btn btn-secondary" id="rootBtn">
-            <i class="fas fa-home"></i> Root
+          <button
+            class="btn btn-secondary"
+            id="rootBtn"
+            aria-label="Root Directory"
+          >
+            <i class="fas fa-home"></i> <span>Root</span>
           </button>
-          <label for="file-input" class="btn btn-secondary" id="uploadLabel">
-            <i class="fas fa-cloud-upload-alt"></i> Upload
+          <div class="search-container">
+            <button
+              class="btn btn-secondary"
+              id="searchBtn"
+              aria-label="Search Files"
+            >
+              <i class="fas fa-search"></i> <span>Search</span>
+            </button>
+            <div id="searchBox" class="search-box">
+              <div class="search-input-row">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Enter filename to search..."
+                />
+                <button
+                  class="btn btn-secondary"
+                  id="executeSearch"
+                  aria-label="Search"
+                >
+                  <i class="fas fa-search"></i> <span>Search</span>
+                </button>
+              </div>
+              <button
+                class="btn btn-secondary"
+                id="closeSearch"
+                aria-label="Close Search"
+              >
+                <i class="fas fa-times"></i> <span>Close</span>
+              </button>
+            </div>
+          </div>
+          <label
+            for="file-input"
+            class="btn btn-secondary"
+            id="uploadLabel"
+            aria-label="Upload File"
+          >
+            <i class="fas fa-cloud-upload-alt"></i> <span>Upload</span>
           </label>
           <input type="file" id="file-input" name="file" class="file-input" />
-          <a href="login.html" class="btn btn-secondary" id="logoutLink">
-            <i class="fas fa-power-off"></i> Logout
+          <a
+            href="login.html"
+            class="btn btn-secondary"
+            id="logoutLink"
+            aria-label="Logout"
+          >
+            <i class="fas fa-power-off"></i> <span>Logout</span>
           </a>
         </div>
 
@@ -65,6 +116,23 @@
           <tbody id="filesTableBody"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="context-menu-overlay" id="contextMenuOverlay"></div>
+
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="openOption">
+            <i class="fas fa-folder-open"></i>
+            <span>Open Folder</span>
+        </div>
+        <div class="context-menu-item" id="previewOption">
+            <i class="fas fa-eye"></i>
+            <span>Preview</span>
+        </div>
+        <div class="context-menu-item" id="downloadOption">
+            <i class="fas fa-download"></i>
+            <span>Download</span>
+        </div>
     </div>
 
     <div id="toastContainer" class="toast-container"></div>

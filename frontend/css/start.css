@@ -194,35 +194,48 @@ nav {
 .code-block {
     background: #2d2d2d;
     color: #f8f8f2;
-    padding: 1.5rem;
+    padding: 0;
     border-radius: 8px;
     font-family: "Courier New", monospace;
     margin-bottom: 1.5rem;
-    overflow-x: auto;
+    overflow: hidden;
     position: relative;
 }
 
-.code-block code {
+.code-header {
+    background: #3d3d3d;
+    padding: 4px 12px;
+    display: flex;
+    justify-content: flex-end;
+    border-bottom: 1px solid #555;
+}
+
+.code-content {
+    padding: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.code-content code {
     display: block;
     white-space: pre;
 }
 
 .copy-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
     background: rgba(255, 255, 255, 0.2);
     color: white;
     border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 3px;
     cursor: pointer;
-    font-size: 0.8rem;
-    transition: background 0.3s ease;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .copy-btn:hover {
     background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
 }
 
 .note {
@@ -345,6 +358,23 @@ footer {
     .page-title {
         font-size: 2rem;
     }
+
+    .code-header {
+        padding: 3px 10px;
+    }
+
+    .code-content {
+        padding: 10px;
+    }
+
+    .copy-btn {
+        padding: 2px 6px;
+        font-size: 0.65rem;
+    }
+
+    .copy-btn:hover {
+        transform: none;
+    }
 }
 
 @media (max-width: 480px) {
@@ -356,9 +386,18 @@ footer {
         font-size: 1.3rem;
     }
 
-    .code-block {
-        padding: 1rem;
-        font-size: 0.9rem;
+    .code-header {
+        padding: 2px 8px;
+    }
+
+    .code-content {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+
+    .copy-btn {
+        padding: 1px 4px;
+        font-size: 0.6rem;
     }
 
     .download-btn {

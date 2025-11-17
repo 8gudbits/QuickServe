@@ -162,3 +162,4 @@ cython_debug/
 # Other files and folders to ignore
 backend/config.json
 output/
+what.txt

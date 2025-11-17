@@ -10,7 +10,11 @@ from getpass import getpass
 class QuickServeConfig:
     def __init__(self):
         self.config_file = "config.json"
-        self.current_directory = os.path.dirname(os.path.abspath(__file__))
+        if getattr(sys, "frozen", False):
+            self.current_directory = os.path.dirname(sys.executable)
+        else:
+            self.current_directory = os.path.dirname(os.path.abspath(__file__))
+
         self.config_path = os.path.join(self.current_directory, self.config_file)
         self.config = self.load_existing_config()
 
@@ -37,6 +41,7 @@ class QuickServeConfig:
             print(f"Configuration saved to {self.config_path}")
         except Exception as e:
             print(f"Error saving configuration: {e}")
+            print(f"Attempted to save to: {self.config_path}")
 
     def clear_screen(self):
         os.system("cls" if os.name == "nt" else "clear")

@@ -17,7 +17,7 @@ from typing import List, Dict
 
 class QuickServe:
     def __init__(self):
-        self.app = FastAPI(title="QuickServe API", version="3.1.0")
+        self.app = FastAPI(title="QuickServe API", version="3.1.1")
         self._setup_paths()
         self._load_config()
         self._setup_cors()

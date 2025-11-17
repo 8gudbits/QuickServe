@@ -229,14 +229,20 @@ body {
 }
 
 #closeSearch {
-    width: 100%;
-    height: 36px;
-    background: var(--accent-1);
-    color: white;
+    width: 100% !important;
+    height: 36px !important;
+    background: var(--accent-1) !important;
+    color: white !important;
+    padding: 0 16px !important;
+    justify-content: center !important;
+}
+
+#closeSearch span {
+    display: inline-block !important;
 }
 
 #closeSearch:hover {
-    background: var(--accent-2);
+    background: var(--accent-2) !important;
 }
 
 .search-results {
@@ -588,8 +594,7 @@ td a:hover {
     .nav-buttons-row .btn,
     .search-input-row .btn,
     #uploadLabel,
-    #executeSearch,
-    #closeSearch {
+    #executeSearch {
         width: 44px !important;
         padding: 0 !important;
         justify-content: center;
@@ -604,6 +609,20 @@ td a:hover {
     .search-input-row .btn i {
         margin: 0 !important;
         font-size: 1rem;
+    }
+
+    #closeSearch {
+        width: 100% !important;
+        padding: 0 16px !important;
+        justify-content: center !important;
+    }
+
+    #closeSearch span {
+        display: inline-block !important;
+    }
+
+    #closeSearch i {
+        margin-right: 6px !important;
     }
 
     .search-box {
@@ -651,6 +670,16 @@ td a:hover {
         min-width: unset;
     }
 
+    #closeSearch {
+        width: 100% !important;
+        height: 36px !important;
+        padding: 0 16px !important;
+    }
+
+    #closeSearch span {
+        display: inline-block !important;
+    }
+
     th:nth-child(2),
     td:nth-child(2),
     th:nth-child(3),
@@ -689,6 +718,16 @@ td a:hover {
         width: 44px !important;
         height: 40px;
         font-size: 0.8rem;
+    }
+
+    #closeSearch {
+        width: 100% !important;
+        height: 36px !important;
+        padding: 0 16px !important;
+    }
+
+    #closeSearch span {
+        display: inline-block !important;
     }
 
     .info-box {

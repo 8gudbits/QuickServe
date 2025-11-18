@@ -568,6 +568,18 @@ td a:hover {
     background: transparent;
 }
 
+.context-menu-item#deleteOption {
+    color: var(--error);
+}
+
+.context-menu-item#deleteOption:hover {
+    background: rgba(176, 58, 40, 0.1);
+}
+
+.context-menu-item#deleteOption.disabled {
+    color: var(--accent-3);
+}
+
 .file-item {
     cursor: pointer;
     transition: background-color 0.2s ease;
@@ -575,6 +587,35 @@ td a:hover {
 
 .file-item:hover {
     background: rgba(90, 61, 104, 0.05) !important;
+}
+
+.menu-column {
+    width: 60px;
+    text-align: center !important;
+}
+
+.menu-button {
+    background: none;
+    border: none;
+    color: var(--accent-2);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.menu-button:hover {
+    background: rgba(90, 61, 104, 0.1);
+    color: var(--accent-1);
+}
+
+.menu-button i {
+    font-size: 0.9rem;
 }
 
 @keyframes fadeIn {
@@ -587,6 +628,85 @@ td a:hover {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.modal-title i {
+    color: var(--error);
+}
+
+.modal-message {
+    color: var(--accent-2);
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.modal-btn-cancel {
+    background: var(--accent-3);
+    color: var(--text);
+}
+
+.modal-btn-cancel:hover {
+    background: #a89ca8;
+}
+
+.modal-btn-delete {
+    background: var(--error);
+    color: white;
+}
+
+.modal-btn-delete:hover {
+    background: #9a3328;
 }
 
 @media (max-width: 820px) {
@@ -759,6 +879,12 @@ td a:hover {
     .toast-content {
         font-size: 0.85rem;
     }
+
+    .menu-button {
+        width: 28px;
+        height: 28px;
+        padding: 6px;
+    }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
@@ -795,6 +921,11 @@ td a:hover {
     td a:hover {
         text-decoration: none;
     }
+
+    .menu-button:hover {
+        background: none;
+        color: var(--accent-2);
+    }
 }
 
 @media (prefers-contrast: high) {
@@ -817,5 +948,25 @@ td a:hover {
     body {
         animation: none;
     }
+}
+
+.context-menu-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+    background: transparent;
+}
+
+#uploadLabel.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#uploadLabel.disabled:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+    background: var(--accent-3);
 }
 

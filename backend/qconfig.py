@@ -22,11 +22,24 @@ class QuickServeConfig:
         if os.path.exists(self.config_path):
             try:
                 with open(self.config_path, "r") as f:
-                    return json.load(f)
+                    config_data = json.load(f)
+
+                    users = config_data.get("users", {})
+                    for username, user_data in users.items():
+                        if isinstance(user_data, str):
+                            config_data["users"][username] = {
+                                "password": user_data,
+                                "can_upload": True,
+                                "can_download": True,
+                                "can_see_preview": True,
+                                "can_delete": True,
+                            }
+
+                    return config_data
             except:
                 print("Existing config file is corrupted. Creating new configuration.")
 
-        return {"port": 5000, "allow_origins": [], "users": {}}
+        return {"port": 5000, "allow_origins": [], "users": {}, "use_recycle_bin": True}
 
     def hash_password(self, password):
         sha256_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -63,11 +76,12 @@ class QuickServeConfig:
             print("1. Quick Setup (Recommended for first time)")
             print("2. Manage Users")
             print("3. Manage CORS Origins")
-            print("4. View Current Configuration")
-            print("5. Save and Exit")
-            print("6. Exit Without Saving")
+            print("4. Server Settings")
+            print("5. View Current Configuration")
+            print("6. Save and Exit")
+            print("7. Exit Without Saving")
 
-            choice = input("\nEnter your choice (1-6): ").strip()
+            choice = input("\nEnter your choice (1-7): ").strip()
 
             if choice == "1":
                 self.quick_setup()
@@ -76,12 +90,14 @@ class QuickServeConfig:
             elif choice == "3":
                 self.manage_cors()
             elif choice == "4":
-                self.view_config()
+                self.server_settings()
             elif choice == "5":
+                self.view_config()
+            elif choice == "6":
                 self.save_config()
                 print("Configuration completed! You can now run your server.")
                 break
-            elif choice == "6":
+            elif choice == "7":
                 if input("Exit without saving? (y/N): ").lower() == "y":
                     print("Exiting without saving changes.")
                     break
@@ -100,6 +116,19 @@ class QuickServeConfig:
                 print(f"Port set to {self.config['port']}")
             except ValueError:
                 print("Invalid port number. Using default.")
+
+        current_recycle_bin = self.config.get("use_recycle_bin", True)
+        recycle_bin_input = (
+            input(f"Use recycle bin for deleted files? (Y/n) [{current_recycle_bin}]: ")
+            .strip()
+            .lower()
+        )
+        if recycle_bin_input in ["y", "yes", ""]:
+            self.config["use_recycle_bin"] = True
+            print("✓ Recycle bin enabled")
+        elif recycle_bin_input in ["n", "no"]:
+            self.config["use_recycle_bin"] = False
+            print("✗ Recycle bin disabled")
 
         print("\nCORS Configuration (required for frontend access):")
         print("Authentication requires specific frontend URLs.")
@@ -123,6 +152,68 @@ class QuickServeConfig:
 
         input("\nQuick setup completed! Press Enter to continue...")
 
+    def server_settings(self):
+        while True:
+            self.clear_screen()
+            print("SERVER SETTINGS\n")
+
+            current_port = self.config.get("port", 5000)
+            current_recycle_bin = self.config.get("use_recycle_bin", True)
+
+            print(f"1. Server Port: {current_port}")
+            print(f"2. Use Recycle Bin: {current_recycle_bin}")
+            print("3. Back to Main Menu")
+
+            choice = input("\nEnter your choice (1-3): ").strip()
+
+            if choice == "1":
+                self.change_port()
+            elif choice == "2":
+                self.toggle_recycle_bin()
+            elif choice == "3":
+                break
+            else:
+                input("Invalid choice. Press Enter to continue...")
+
+    def change_port(self):
+        print("\nCHANGE SERVER PORT")
+        current_port = self.config.get("port", 5000)
+        port_input = input(f"Enter new server port [{current_port}]: ").strip()
+
+        if port_input:
+            try:
+                new_port = int(port_input)
+                if 1 <= new_port <= 65535:
+                    self.config["port"] = new_port
+                    print(f"Port changed to {new_port}")
+                else:
+                    print("Port must be between 1 and 65535")
+            except ValueError:
+                print("Invalid port number")
+        else:
+            print("Port unchanged")
+
+        input("Press Enter to continue...")
+
+    def toggle_recycle_bin(self):
+        print("\nRECYCLE BIN SETTING")
+        current_setting = self.config.get("use_recycle_bin", True)
+        print("When enabled, deleted files are moved to .recycle_bin folder instead")
+        print("of being permanently deleted. This prevents accidental data loss.")
+        print(f"Current setting: {current_setting}")
+
+        choice = input("Use recycle bin for deleted files? (Y/n): ").strip().lower()
+        if choice in ["y", "yes", ""]:
+            self.config["use_recycle_bin"] = True
+            print("✓ Recycle bin enabled")
+        elif choice in ["n", "no"]:
+            self.config["use_recycle_bin"] = False
+            print("✗ Recycle bin disabled")
+        else:
+            print("Setting unchanged")
+
+        input("Press Enter to continue...")
+
     def manage_users(self):
         while True:
             self.clear_screen()
@@ -131,8 +222,22 @@ class QuickServeConfig:
             users = self.config.get("users", {})
             if users:
                 print("Current users:")
-                for i, username in enumerate(users.keys(), 1):
-                    print(f"  {i}. {username}")
+                for i, (username, user_data) in enumerate(users.items(), 1):
+                    if isinstance(user_data, dict):
+                        permissions = []
+                        if user_data.get("can_upload", True):
+                            permissions.append("upload")
+                        if user_data.get("can_download", True):
+                            permissions.append("download")
+                        if user_data.get("can_see_preview", True):
+                            permissions.append("preview")
+                        if user_data.get("can_delete", True):
+                            permissions.append("delete")
+                        print(
+                            f"  {i}. {username} [Permissions: {', '.join(permissions)}]"
+                        )
+                    else:
+                        print(f"  {i}. {username} [All permissions]")
             else:
                 print("No users configured.")
 
@@ -140,9 +245,10 @@ class QuickServeConfig:
             print("1. Add User")
             print("2. Remove User")
             print("3. Change Password")
-            print("4. Back to Main Menu")
+            print("4. Edit Permissions")
+            print("5. Back to Main Menu")
 
-            choice = input("\nEnter your choice (1-4): ").strip()
+            choice = input("\nEnter your choice (1-5): ").strip()
 
             if choice == "1":
                 self.add_user()
@@ -151,6 +257,8 @@ class QuickServeConfig:
             elif choice == "3":
                 self.change_password()
             elif choice == "4":
+                self.edit_permissions()
+            elif choice == "5":
                 break
             else:
                 input("Invalid choice. Press Enter to continue...")
@@ -179,12 +287,40 @@ class QuickServeConfig:
             print("Password cannot be empty")
             return
 
+        print("\nUser Permissions:")
+        can_upload = input("Allow file upload? (Y/n): ").strip().lower() in [
+            "",
+            "y",
+            "yes",
+        ]
+        can_download = input("Allow file download? (Y/n): ").strip().lower() in [
+            "",
+            "y",
+            "yes",
+        ]
+        can_see_preview = input("Allow file preview? (Y/n): ").strip().lower() in [
+            "",
+            "y",
+            "yes",
+        ]
+        can_delete = input("Allow file deletion? (Y/n): ").strip().lower() in [
+            "",
+            "y",
+            "yes",
+        ]
+
         if "users" not in self.config:
             self.config["users"] = {}
 
         hashed_password = self.hash_password(password)
-        self.config["users"][username] = hashed_password
-        print(f"User '{username}' added successfully")
+        self.config["users"][username] = {
+            "password": hashed_password,
+            "can_upload": can_upload,
+            "can_download": can_download,
+            "can_see_preview": can_see_preview,
+            "can_delete": can_delete,
+        }
+        print(f"User '{username}' added successfully with selected permissions")
 
     def remove_user(self):
         users = self.config.get("users", {})
@@ -237,8 +373,55 @@ class QuickServeConfig:
             return
 
         hashed_password = self.hash_password(new_password)
-        self.config["users"][username] = hashed_password
+
+        if isinstance(users[username], dict):
+            self.config["users"][username]["password"] = hashed_password
+        else:
+            self.config["users"][username] = hashed_password
+
         print(f"Password for '{username}' updated successfully")
+        input("Press Enter to continue...")
+
+    def edit_permissions(self):
+        users = self.config.get("users", {})
+        if not users:
+            input("No users configured. Press Enter to continue...")
+            return
+
+        print("\nEDIT USER PERMISSIONS")
+        username = input("Username: ").strip()
+
+        if username not in users:
+            print("User not found")
+            return
+
+        user_data = users[username]
+        if not isinstance(user_data, dict):
+            user_data = {"password": user_data}
+            self.config["users"][username] = user_data
+
+        print(f"\nCurrent permissions for '{username}':")
+        print(f"  Upload: {user_data.get('can_upload', True)}")
+        print(f"  Download: {user_data.get('can_download', True)}")
+        print(f"  Preview: {user_data.get('can_see_preview', True)}")
+        print(f"  Delete: {user_data.get('can_delete', True)}")
+
+        print("\nNew permissions (press Enter to keep current):")
+        can_upload_input = input("Allow file upload? (Y/n): ").strip().lower()
+        can_download_input = input("Allow file download? (Y/n): ").strip().lower()
+        can_see_preview_input = input("Allow file preview? (Y/n): ").strip().lower()
+        can_delete_input = input("Allow file deletion? (Y/n): ").strip().lower()
+
+        if can_upload_input:
+            user_data["can_upload"] = can_upload_input in ["", "y", "yes"]
+        if can_download_input:
+            user_data["can_download"] = can_download_input in ["", "y", "yes"]
+        if can_see_preview_input:
+            user_data["can_see_preview"] = can_see_preview_input in ["", "y", "yes"]
+        if can_delete_input:
+            user_data["can_delete"] = can_delete_input in ["", "y", "yes"]
+
+        print(f"Permissions for '{username}' updated successfully")
         input("Press Enter to continue...")
 
     def manage_cors(self):
@@ -324,7 +507,6 @@ class QuickServeConfig:
             input("Press Enter to continue...")
             return
 
-        # Basic validation
         if not origin.startswith(("http://", "https://")):
             print("Error: Origin must start with http:// or https://")
             input("Press Enter to continue...")
@@ -370,6 +552,7 @@ class QuickServeConfig:
         print("CURRENT CONFIGURATION\n")
 
         print(f"Port: {self.config.get('port', 5000)}")
+        print(f"Use Recycle Bin: {self.config.get('use_recycle_bin', True)}")
 
         origins = self.config.get("allow_origins", [])
         print("Allowed Origins:")
@@ -381,8 +564,20 @@ class QuickServeConfig:
 
         users = self.config.get("users", {})
         print(f"Users: {len(users)} user(s) configured")
-        for username in users.keys():
-            print(f"  {username}")
+        for username, user_data in users.items():
+            if isinstance(user_data, dict):
+                permissions = []
+                if user_data.get("can_upload", True):
+                    permissions.append("upload")
+                if user_data.get("can_download", True):
+                    permissions.append("download")
+                if user_data.get("can_see_preview", True):
+                    permissions.append("preview")
+                if user_data.get("can_delete", True):
+                    permissions.append("delete")
+                print(f"  {username} [Permissions: {', '.join(permissions)}]")
+            else:
+                print(f"  {username} [All permissions]")
 
         input("\nPress Enter to continue...")
 

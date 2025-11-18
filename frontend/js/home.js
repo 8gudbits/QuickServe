@@ -9,16 +9,12 @@ class QuickServeClient {
       return;
     }
 
+    this.userPermissions = null;
     this.previewableTypes = [
       // Text & Documents
       "txt",
       "pdf",
-      "doc",
-      "docx",
-      "rtf",
-      "odt",
       "md",
-      "tex",
 
       // Images
       "jpg",
@@ -29,12 +25,7 @@ class QuickServeClient {
       "svg",
       "webp",
       "ico",
-      "tiff",
-      "tif",
       "avif",
-      "heic",
-      "heif",
-      "psd",
 
       // Web Files
       "html",
@@ -61,8 +52,6 @@ class QuickServeClient {
       "mp4",
       "webm",
       "ogg",
-      "mov",
-      "avi",
       "mkv",
       "m4v",
       "3gp",
@@ -73,7 +62,6 @@ class QuickServeClient {
       "flac",
       "aac",
       "m4a",
-      "wma",
       "opus",
 
       // Programming Languages
@@ -116,37 +104,72 @@ class QuickServeClient {
       "lock",
       "env",
 
-      // Archives
-      "zip",
-      "tar",
-      "gz",
-      "7z",
-      "rar",
-
-      // Fonts
-      "ttf",
-      "otf",
-      "woff",
-      "woff2",
-
       // Other
-      "epub",
       "ics",
       "vcf",
     ];
 
     this.currentSelectedFile = null;
+    this.pendingDeleteFile = null;
+    this.suppressLoading = false;
     this.init();
   }
 
   async init() {
+    await this.loadUserPermissions();
     this.updateServerInfo();
+    this.updateUIWithPermissions();
 
     const initialPath = this.getPathFromURL();
-
     await this.loadFiles(initialPath);
     this.setupEventListeners();
     this.setupContextMenu();
+  }
+
+  async loadUserPermissions() {
+    try {
+      const url = `${
+        this.serverUrl
+      }/api/permissions?username=${encodeURIComponent(
+        this.username
+      )}&password=${encodeURIComponent(this.password)}`;
+      const response = await fetch(url, {
+        method: "GET",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.userPermissions = data.permissions;
+      } else {
+        this.userPermissions = {
+          can_upload: true,
+          can_download: true,
+          can_see_preview: true,
+          can_delete: true,
+        };
+      }
+    } catch (error) {
+      this.userPermissions = {
+        can_upload: true,
+        can_download: true,
+        can_see_preview: true,
+        can_delete: true,
+      };
+    }
+  }
+
+  updateUIWithPermissions() {
+    const uploadLabel = document.getElementById("uploadLabel");
+
+    if (!this.userPermissions.can_upload) {
+      uploadLabel.classList.add("disabled");
+      uploadLabel.style.opacity = "0.5";
+      uploadLabel.style.cursor = "not-allowed";
+      uploadLabel.onclick = (e) => {
+        e.preventDefault();
+        this.showError("You don't have permission to upload files");
+      };
+    }
   }
 
   setupContextMenu() {
@@ -155,23 +178,22 @@ class QuickServeClient {
     this.previewOption = document.getElementById("previewOption");
     this.downloadOption = document.getElementById("downloadOption");
     this.openOption = document.getElementById("openOption");
+    this.downloadZipOption = document.getElementById("downloadZipOption");
+    this.deleteOption = document.getElementById("deleteOption");
 
     this.contextMenuOverlay.addEventListener("click", () => {
       this.hideContextMenu();
     });
 
     this.previewOption.addEventListener("click", () => {
-      if (
-        this.currentSelectedFile &&
-        this.isPreviewable(this.currentSelectedFile)
-      ) {
+      if (this.currentSelectedFile && this.userPermissions.can_see_preview) {
         this.previewFile(this.currentSelectedFile);
       }
       this.hideContextMenu();
     });
 
     this.downloadOption.addEventListener("click", () => {
-      if (this.currentSelectedFile) {
+      if (this.currentSelectedFile && this.userPermissions.can_download) {
         this.downloadFile(this.currentSelectedFile.path);
       }
       this.hideContextMenu();
@@ -184,31 +206,75 @@ class QuickServeClient {
       this.hideContextMenu();
     });
 
+    this.downloadZipOption.addEventListener("click", () => {
+      if (this.currentSelectedFile && this.userPermissions.can_download) {
+        this.downloadFolderAsZip(this.currentSelectedFile.path);
+      }
+      this.hideContextMenu();
+    });
+
+    this.deleteOption.addEventListener("click", () => {
+      if (this.currentSelectedFile) {
+        this.deleteFileOrFolder(this.currentSelectedFile);
+      }
+      this.hideContextMenu();
+    });
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         this.hideContextMenu();
       }
     });
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        this.hideContextMenu();
+      },
+      true
+    );
   }
 
   showContextMenu(x, y, file) {
+    this.hideContextMenu();
+
     this.currentSelectedFile = file;
+
+    this.openOption.style.display = "none";
+    this.previewOption.style.display = "none";
+    this.downloadOption.style.display = "none";
+    this.downloadZipOption.style.display = "none";
+    this.deleteOption.style.display = "none";
 
     if (file.type === "folder") {
       this.openOption.style.display = "flex";
-      this.previewOption.style.display = "none";
-      this.downloadOption.style.display = "none";
+      this.downloadZipOption.style.display = "flex";
+      this.deleteOption.style.display = "flex";
+      this.downloadZipOption.classList.toggle(
+        "disabled",
+        !this.userPermissions.can_download
+      );
+      this.deleteOption.classList.toggle(
+        "disabled",
+        !this.userPermissions.can_delete
+      );
     } else {
-      this.openOption.style.display = "none";
       this.previewOption.style.display = "flex";
       this.downloadOption.style.display = "flex";
-
+      this.deleteOption.style.display = "flex";
       const isPreviewable = this.isPreviewable(file);
-      if (isPreviewable) {
-        this.previewOption.classList.remove("disabled");
-      } else {
-        this.previewOption.classList.add("disabled");
-      }
+      this.previewOption.classList.toggle(
+        "disabled",
+        !isPreviewable || !this.userPermissions.can_see_preview
+      );
+      this.downloadOption.classList.toggle(
+        "disabled",
+        !this.userPermissions.can_download
+      );
+      this.deleteOption.classList.toggle(
+        "disabled",
+        !this.userPermissions.can_delete
+      );
     }
 
     this.contextMenu.style.left = x + "px";
@@ -237,101 +303,148 @@ class QuickServeClient {
   }
 
   previewFile(file) {
-    const url = `${this.serverUrl}/api/preview?path=${file.path}`;
+    if (!this.userPermissions.can_see_preview) {
+      this.showError("You don't have permission to preview files");
+      return;
+    }
+
+    const url = `${this.serverUrl}/api/preview?path=${encodeURIComponent(
+      file.path
+    )}&username=${encodeURIComponent(
+      this.username
+    )}&password=${encodeURIComponent(this.password)}`;
     window.open(url, "_blank");
   }
 
   handleFileClick(file) {
     if (file.type === "folder") {
       this.navigateToPath(file.path);
-    } else if (this.isPreviewable(file)) {
-      this.previewFile(file);
     } else {
-      this.downloadFile(file.path);
+      if (this.userPermissions.can_download) {
+        this.downloadFile(file.path);
+      } else {
+        this.showError("You don't have permission to download files");
+      }
     }
   }
 
-  displayFiles(data, requestedPath) {
-    const filesTable = document.getElementById("filesTable");
-    const filesTableBody = document.getElementById("filesTableBody");
-    const emptyState = document.getElementById("emptyState");
-    const currentPathText = document.getElementById("currentPathText");
+  handleMenuButtonClick(file, event) {
+    event.stopPropagation();
+    const rect = event.target.getBoundingClientRect();
+    this.showContextMenu(rect.right - 180, rect.bottom + 5, file);
+  }
 
-    const actualPath = data.current_dir || "";
-    this.updateURL(actualPath);
-
-    let displayPath = actualPath || "/";
-    if (displayPath === "") {
-      displayPath = "/";
-    }
-
-    currentPathText.textContent = displayPath;
-    filesTableBody.innerHTML = "";
-
-    if (data.files.length === 0) {
-      filesTable.style.display = "none";
-      emptyState.style.display = "block";
-      this.hideLoading();
-      this.updateNavigation(actualPath);
+  downloadFolderAsZip(folderPath) {
+    if (!this.userPermissions.can_download) {
+      this.showError("You don't have permission to download files");
       return;
     }
 
-    data.files.forEach((file) => {
-      const row = document.createElement("tr");
-      row.className = "file-item";
-
-      const nameCell = document.createElement("td");
-      const link = document.createElement("a");
-      link.href = "#";
-
-      if (file.type === "folder") {
-        link.innerHTML = `<i class="fas fa-folder"></i> ${file.name}`;
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          this.navigateToPath(file.path);
-        });
-      } else {
-        link.innerHTML = `<i class="fas fa-file"></i> ${file.name}`;
-
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          this.handleFileClick(file);
-        });
-      }
-
-      row.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        this.showContextMenu(e.pageX, e.pageY, file);
-      });
-
-      nameCell.appendChild(link);
-      row.appendChild(nameCell);
-
-      const dateCell = document.createElement("td");
-      dateCell.textContent = file.date_modified;
-      row.appendChild(dateCell);
-
-      const sizeCell = document.createElement("td");
-      sizeCell.textContent = this.formatFileSize(file.size);
-      row.appendChild(sizeCell);
-
-      filesTableBody.appendChild(row);
-    });
-
-    filesTable.style.display = "table";
-    emptyState.style.display = "none";
-    this.hideLoading();
-    this.updateNavigation(actualPath);
-  }
-
-  downloadFile(filePath) {
-    const url = `${this.serverUrl}/api/download?path=${filePath}`;
+    const url = `${this.serverUrl}/api/download-zip?path=${encodeURIComponent(
+      folderPath
+    )}&username=${encodeURIComponent(
+      this.username
+    )}&password=${encodeURIComponent(this.password)}`;
     const a = document.createElement("a");
     a.style.display = "none";
     a.href = url;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    this.showSuccess("Folder download started");
+  }
+
+  downloadFile(filePath) {
+    if (!this.userPermissions.can_download) {
+      this.showError("You don't have permission to download files");
+      return;
+    }
+
+    const url = `${this.serverUrl}/api/download?path=${encodeURIComponent(
+      filePath
+    )}&username=${encodeURIComponent(
+      this.username
+    )}&password=${encodeURIComponent(this.password)}`;
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  deleteFileOrFolder(file) {
+    if (!this.userPermissions.can_delete) {
+      this.showError("You don't have permission to delete files");
+      return;
+    }
+
+    this.showDeleteModal(file);
+  }
+
+  showDeleteModal(file) {
+    this.pendingDeleteFile = file;
+    const itemType = file.type === "folder" ? "folder" : "file";
+    const message = `Are you sure you want to delete the ${itemType} "<strong>${file.name}</strong>"? This action cannot be undone.`;
+
+    document.getElementById("deleteModalMessage").innerHTML = message;
+    document.getElementById("deleteModal").style.display = "flex";
+  }
+
+  hideDeleteModal() {
+    document.getElementById("deleteModal").style.display = "none";
+    this.pendingDeleteFile = null;
+  }
+
+  async executeDelete() {
+    if (!this.pendingDeleteFile) return;
+
+    const file = this.pendingDeleteFile;
+    this.hideDeleteModal();
+
+    if (!this.userPermissions.can_delete) {
+      this.showError("You don't have permission to delete files");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("username", this.username);
+      formData.append("password", this.password);
+      formData.append("path", file.path);
+
+      const response = await fetch(`${this.serverUrl}/api/delete`, {
+        method: "DELETE",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        if (result.status === "success") {
+          const itemType = file.type === "folder" ? "folder" : "file";
+          const successMessage = `${
+            itemType.charAt(0).toUpperCase() + itemType.slice(1)
+          } deleted successfully`;
+
+          this.showSuccess(successMessage);
+
+          const currentPath = this.getPathFromURL();
+          setTimeout(() => {
+            this.loadFiles(currentPath);
+          }, 100);
+        } else {
+          throw new Error(result.message || "Delete failed");
+        }
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Delete failed: ${errorText}`);
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      const itemType = file.type === "folder" ? "folder" : "file";
+      this.showError(`Failed to delete ${itemType}: ${error.message}`);
+    }
   }
 
   getPathFromURL() {
@@ -369,13 +482,17 @@ class QuickServeClient {
   }
 
   async loadFiles(path) {
-    this.showLoading();
+    const isNavigation = !this.suppressLoading;
+    if (isNavigation) {
+      this.showLoading();
+    }
 
     try {
-      const url = `${this.serverUrl}/api/files?path=${path}`;
+      const url = `${this.serverUrl}/api/files?path=${encodeURIComponent(
+        path
+      )}`;
       const response = await fetch(url, {
-        headers: this.getAuthHeaders(),
-        credentials: "include",
+        method: "GET",
       });
 
       if (response.ok) {
@@ -388,25 +505,130 @@ class QuickServeClient {
       }
     } catch (error) {
       this.showError("Failed to connect to server");
+    } finally {
+      this.suppressLoading = false;
     }
   }
 
+  displayFiles(data, requestedPath) {
+    const filesTable = document.getElementById("filesTable");
+    const filesTableBody = document.getElementById("filesTableBody");
+    const emptyState = document.getElementById("emptyState");
+    const currentPathText = document.getElementById("currentPathText");
+
+    const actualPath = data.current_dir || "";
+    this.updateURL(actualPath);
+
+    let displayPath = actualPath || "/";
+    if (displayPath === "") {
+      displayPath = "/";
+    }
+
+    currentPathText.textContent = displayPath;
+
+    filesTableBody.style.opacity = "0.7";
+    filesTableBody.style.transition = "opacity 0.2s ease";
+
+    setTimeout(() => {
+      filesTableBody.innerHTML = "";
+
+      if (data.files.length === 0) {
+        filesTable.style.display = "none";
+        emptyState.style.display = "block";
+        this.hideLoading();
+        this.updateNavigation(actualPath);
+        filesTableBody.style.opacity = "1";
+        return;
+      }
+
+      data.files.forEach((file) => {
+        const row = document.createElement("tr");
+        row.className = "file-item";
+
+        const nameCell = document.createElement("td");
+        const link = document.createElement("a");
+        link.href = "#";
+
+        if (file.type === "folder") {
+          link.innerHTML = `<i class="fas fa-folder"></i> ${file.name}`;
+          link.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleFileClick(file);
+          });
+        } else {
+          link.innerHTML = `<i class="fas fa-file"></i> ${file.name}`;
+          link.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleFileClick(file);
+          });
+        }
+
+        nameCell.appendChild(link);
+        row.appendChild(nameCell);
+
+        const dateCell = document.createElement("td");
+        dateCell.textContent = file.date_modified;
+        row.appendChild(dateCell);
+
+        const sizeCell = document.createElement("td");
+        sizeCell.textContent = this.formatFileSize(file.size);
+        row.appendChild(sizeCell);
+
+        const menuCell = document.createElement("td");
+        menuCell.className = "menu-column";
+
+        const menuButton = document.createElement("button");
+        menuButton.className = "menu-button";
+        menuButton.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+        menuButton.setAttribute("aria-label", "File options");
+        menuButton.addEventListener("click", (e) => {
+          this.handleMenuButtonClick(file, e);
+        });
+        menuCell.appendChild(menuButton);
+
+        row.appendChild(menuCell);
+
+        filesTableBody.appendChild(row);
+      });
+
+      filesTable.style.display = "table";
+      emptyState.style.display = "none";
+      this.hideLoading();
+      this.updateNavigation(actualPath);
+
+      setTimeout(() => {
+        filesTableBody.style.opacity = "1";
+      }, 50);
+    }, 100);
+  }
+
   async uploadFile(file) {
+    if (!this.userPermissions.can_upload) {
+      this.showError("You don't have permission to upload files");
+      return;
+    }
+
     const currentPath = this.getPathFromURL();
     const formData = new FormData();
     formData.append("file", file);
     formData.append("path", currentPath);
+    formData.append("username", this.username);
+    formData.append("password", this.password);
 
     try {
       const response = await fetch(`${this.serverUrl}/api/upload`, {
         method: "POST",
-        credentials: "include",
         body: formData,
       });
 
       if (response.ok) {
-        await this.loadFiles(currentPath);
-        this.showSuccess("Upload successful!");
+        const result = await response.json();
+
+        this.showSuccess("File uploaded successfully!");
+
+        setTimeout(() => {
+          this.loadFiles(currentPath);
+        }, 100);
       } else {
         throw new Error("Upload failed");
       }
@@ -425,10 +647,11 @@ class QuickServeClient {
     const currentPath = this.getPathFromURL();
 
     try {
-      const url = `${this.serverUrl}/api/search?path=${currentPath}&pattern=${pattern}`;
+      const url = `${this.serverUrl}/api/search?path=${encodeURIComponent(
+        currentPath
+      )}&pattern=${encodeURIComponent(pattern)}`;
       const response = await fetch(url, {
-        headers: this.getAuthHeaders(),
-        credentials: "include",
+        method: "GET",
       });
 
       if (response.ok) {
@@ -470,7 +693,7 @@ class QuickServeClient {
 
     const headerRow = document.createElement("tr");
     headerRow.className = "search-header-row";
-    headerRow.innerHTML = `<td colspan="3"><i class="fas fa-search"></i> Found ${data.count} files matching "${pattern}"<button class="clear-search-btn" id="clearSearch">Clear Search</button></td>`;
+    headerRow.innerHTML = `<td colspan="4"><i class="fas fa-search"></i> Found ${data.count} files matching "${pattern}"<button class="clear-search-btn" id="clearSearch">Clear Search</button></td>`;
     filesTableBody.appendChild(headerRow);
 
     data.results.forEach((file) => {
@@ -493,11 +716,6 @@ class QuickServeClient {
         this.handleFileClick(file);
       });
 
-      row.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        this.showContextMenu(e.pageX, e.pageY, file);
-      });
-
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
@@ -508,6 +726,20 @@ class QuickServeClient {
       const sizeCell = document.createElement("td");
       sizeCell.textContent = this.formatFileSize(file.size);
       row.appendChild(sizeCell);
+
+      const menuCell = document.createElement("td");
+      menuCell.className = "menu-column";
+
+      const menuButton = document.createElement("button");
+      menuButton.className = "menu-button";
+      menuButton.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+      menuButton.setAttribute("aria-label", "File options");
+      menuButton.addEventListener("click", (e) => {
+        this.handleMenuButtonClick(file, e);
+      });
+      menuCell.appendChild(menuButton);
+
+      row.appendChild(menuCell);
 
       filesTableBody.appendChild(row);
     });
@@ -526,18 +758,6 @@ class QuickServeClient {
         });
       }
     }, 0);
-  }
-
-  getAuthHeaders(isJson = true) {
-    const headers = {};
-    if (isJson) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    const authString = btoa(`${this.username}:${this.password}`);
-    headers["Authorization"] = `Basic ${authString}`;
-
-    return headers;
   }
 
   handleAuthError() {
@@ -691,6 +911,20 @@ class QuickServeClient {
       e.preventDefault();
       sessionStorage.clear();
       window.location.href = "login.html";
+    });
+
+    document.getElementById("cancelDelete").addEventListener("click", () => {
+      this.hideDeleteModal();
+    });
+
+    document.getElementById("confirmDelete").addEventListener("click", () => {
+      this.executeDelete();
+    });
+
+    document.getElementById("deleteModal").addEventListener("click", (e) => {
+      if (e.target.id === "deleteModal") {
+        this.hideDeleteModal();
+      }
     });
 
     this.setupSearch();

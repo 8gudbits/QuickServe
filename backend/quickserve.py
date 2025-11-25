@@ -17,6 +17,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
+APPNAME = "QuickServe API"
+VERSION = "3.2.0-rc4"
+
 
 class BruteForceProtection:
     def __init__(self, config: Dict):
@@ -158,56 +161,6 @@ class UserPermissions(BaseModel):
     can_delete: bool
 
 
-class AuthenticationService:
-    def __init__(self, config: ServerConfig):
-        self.config = config
-        self.brute_force = BruteForceProtection(config.brute_force_protection)
-
-    def authenticate_user(self, username: str, password: str) -> tuple[bool, Optional[str]]:
-        is_locked, lock_message = self.brute_force.is_locked(username)
-        if is_locked:
-            return False, lock_message
-        users = self.config.users
-        if username not in users:
-            needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
-            return False, cooldown_message if needs_cooldown else "Invalid credentials"
-        user_data = users[username]
-        if isinstance(user_data, dict):
-            stored_hash = user_data.get("password", "")
-        else:
-            stored_hash = user_data
-        try:
-            if bcrypt.checkpw(password.encode(), stored_hash.encode()):
-                self.brute_force.record_successful_attempt(username)
-                return True, None
-            else:
-                needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
-                return False, cooldown_message if needs_cooldown else "Invalid credentials"
-        except Exception:
-            needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
-            return False, cooldown_message if needs_cooldown else "Authentication error"
-
-    def get_user_permissions(self, username: str) -> Optional[UserPermissions]:
-        users = self.config.users
-        if username not in users:
-            return None
-        user_data = users[username]
-        if isinstance(user_data, dict):
-            return UserPermissions(
-                can_upload=user_data.get("can_upload", True),
-                can_download=user_data.get("can_download", True),
-                can_see_preview=user_data.get("can_see_preview", True),
-                can_delete=user_data.get("can_delete", True),
-            )
-        else:
-            return UserPermissions(
-                can_upload=True,
-                can_download=True,
-                can_see_preview=True,
-                can_delete=True,
-            )
-
-
 class FileSystemService:
     def __init__(self, server_root: str, use_recycle_bin: bool):
         self.server_root = server_root
@@ -262,7 +215,27 @@ class FileSystemService:
         )
 
     def get_file_size(self, file_path: str) -> int:
-        return os.path.getsize(file_path)
+        try:
+            return os.path.getsize(file_path)
+        except (OSError, FileNotFoundError):
+            return 0
+
+    def get_folder_size(self, folder_path: str) -> int:
+        total_size = 0
+        try:
+            for dirpath, dirnames, filenames in os.walk(folder_path):
+                if ".recycle_bin" in dirpath.split(os.sep):
+                    continue
+
+                for filename in filenames:
+                    filepath = os.path.join(dirpath, filename)
+                    try:
+                        total_size += os.path.getsize(filepath)
+                    except (OSError, FileNotFoundError):
+                        continue
+        except (OSError, FileNotFoundError):
+            return 0
+        return total_size
 
     def move_to_recycle_bin(self, absolute_path: str) -> bool:
         if not self.use_recycle_bin:
@@ -296,34 +269,34 @@ class FileSystemService:
                 if entry == ".recycle_bin":
                     continue
                 entry_path = os.path.join(absolute_path, entry)
+                entry_clean_path = self.clean_path(
+                    os.path.relpath(entry_path, self.server_root)
+                )
+
+                if self.is_recycle_bin_path(entry_clean_path):
+                    continue
+
                 if os.path.isdir(entry_path):
-                    entry_clean_path = self.clean_path(
-                        os.path.relpath(entry_path, self.server_root)
-                    )
-                    if not self.is_recycle_bin_path(entry_clean_path):
-                        folders.append(
-                            FileEntry(
-                                name=entry,
-                                path=entry_clean_path,
-                                type="folder",
-                                date_modified=self.get_file_date_modified(entry_path),
-                                size=self.get_file_size(entry_path),
-                            )
+                    folder_size = self.get_folder_size(entry_path)
+                    folders.append(
+                        FileEntry(
+                            name=entry,
+                            path=entry_clean_path,
+                            type="folder",
+                            date_modified=self.get_file_date_modified(entry_path),
+                            size=folder_size,
                         )
+                    )
                 elif os.path.isfile(entry_path):
-                    entry_clean_path = self.clean_path(
-                        os.path.relpath(entry_path, self.server_root)
-                    )
-                    if not self.is_recycle_bin_path(entry_clean_path):
-                        files.append(
-                            FileEntry(
-                                name=entry,
-                                path=entry_clean_path,
-                                type="file",
-                                date_modified=self.get_file_date_modified(entry_path),
-                                size=self.get_file_size(entry_path),
-                            )
+                    files.append(
+                        FileEntry(
+                            name=entry,
+                            path=entry_clean_path,
+                            type="file",
+                            date_modified=self.get_file_date_modified(entry_path),
+                            size=self.get_file_size(entry_path),
                         )
+                    )
         except ValueError:
             return []
         return folders + files
@@ -367,6 +340,56 @@ class FileSystemService:
         return sorted(results, key=lambda x: x["name"].lower())
 
 
+class AuthenticationService:
+    def __init__(self, config: ServerConfig):
+        self.config = config
+        self.brute_force = BruteForceProtection(config.brute_force_protection)
+
+    def authenticate_user(self, username: str, password: str) -> tuple[bool, Optional[str]]:
+        is_locked, lock_message = self.brute_force.is_locked(username)
+        if is_locked:
+            return False, lock_message
+        users = self.config.users
+        if username not in users:
+            needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
+            return False, cooldown_message if needs_cooldown else "Invalid credentials"
+        user_data = users[username]
+        if isinstance(user_data, dict):
+            stored_hash = user_data.get("password", "")
+        else:
+            stored_hash = user_data
+        try:
+            if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+                self.brute_force.record_successful_attempt(username)
+                return True, None
+            else:
+                needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
+                return False, cooldown_message if needs_cooldown else "Invalid credentials"
+        except Exception:
+            needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
+            return False, cooldown_message if needs_cooldown else "Authentication error"
+
+    def get_user_permissions(self, username: str) -> Optional[UserPermissions]:
+        users = self.config.users
+        if username not in users:
+            return None
+        user_data = users[username]
+        if isinstance(user_data, dict):
+            return UserPermissions(
+                can_upload=user_data.get("can_upload", True),
+                can_download=user_data.get("can_download", True),
+                can_see_preview=user_data.get("can_see_preview", True),
+                can_delete=user_data.get("can_delete", True),
+            )
+        else:
+            return UserPermissions(
+                can_upload=True,
+                can_download=True,
+                can_see_preview=True,
+                can_delete=True,
+            )
+
+
 class QuickServe:
     def __init__(self):
         self._setup_paths()
@@ -375,7 +398,7 @@ class QuickServe:
         self.fs_service = FileSystemService(
             self.SERVER_ROOT, self.config.use_recycle_bin
         )
-        self.app = FastAPI(title="QuickServe API", version="3.2.0-rc3")
+        self.app = FastAPI(title=APPNAME, version=VERSION)
         self._setup_cors()
         self._setup_routes()
 
@@ -471,32 +494,56 @@ class QuickServe:
 
     async def download_zip(
         self,
-        path: str = Query(...),
+        paths: List[str] = Query(...),
         username: str = Query(...),
         password: str = Query(...),
     ):
         permissions = await self._authenticate_user(username, password)
         if not permissions.can_download:
             raise HTTPException(status_code=403, detail="Download not permitted")
+
         try:
-            clean_path = self.fs_service.clean_path(path)
-            absolute_path = self.fs_service.get_absolute_path(clean_path)
-            if not os.path.exists(absolute_path) or not os.path.isdir(absolute_path):
-                raise HTTPException(status_code=404, detail="Folder not found")
-            folder_name = os.path.basename(absolute_path) or "folder"
+            if isinstance(paths, str):
+                paths = [paths]
+
+            absolute_paths = []
+            for path in paths:
+                clean_path = self.fs_service.clean_path(path)
+                absolute_path = self.fs_service.get_absolute_path(clean_path)
+                if not os.path.exists(absolute_path):
+                    raise HTTPException(status_code=404, detail=f"Path not found: {path}")
+                absolute_paths.append(absolute_path)
+
+            if len(absolute_paths) == 1:
+                folder_name = os.path.basename(absolute_paths[0]) or "folder"
+            else:
+                folder_name = "selected_files"
             zip_filename = f"{folder_name}.zip"
+
             def generate_zip():
                 memory_file = io.BytesIO()
                 with zipfile.ZipFile(memory_file, "w", zipfile.ZIP_DEFLATED) as zf:
-                    for root, dirs, files in os.walk(absolute_path):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            if self.fs_service.is_recycle_bin_path(file_path):
-                                continue
-                            arcname = os.path.relpath(file_path, absolute_path)
-                            zf.write(file_path, arcname)
+                    for absolute_path in absolute_paths:
+                        if os.path.isfile(absolute_path):
+                            if not self.fs_service.is_recycle_bin_path(absolute_path):
+                                arcname = os.path.basename(absolute_path)
+                                zf.write(absolute_path, arcname)
+                        elif os.path.isdir(absolute_path):
+                            for root, dirs, files in os.walk(absolute_path):
+                                if ".recycle_bin" in root.split(os.sep):
+                                    continue
+                                dirs[:] = [d for d in dirs if d != ".recycle_bin"]
+
+                                for file in files:
+                                    file_path = os.path.join(root, file)
+                                    if self.fs_service.is_recycle_bin_path(file_path):
+                                        continue
+                                    arcname = os.path.relpath(file_path, os.path.dirname(absolute_path))
+                                    zf.write(file_path, arcname)
+
                 memory_file.seek(0)
                 return memory_file
+
             return StreamingResponse(
                 generate_zip(),
                 media_type="application/zip",
@@ -682,15 +729,35 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
 
+    def _get_terminal_width(self):
+        try:
+            return shutil.get_terminal_size().columns
+        except:
+            return 80
+
+    def _print_centered(self, text, width, char=" "):
+        padding = (width - len(text)) // 2
+        print(f"{char * padding}{text}{char * (width - len(text) - padding)}")
+
+    def _print_line(self, text="", width=80, char="-"):
+        if not text:
+            print(char * width)
+        else:
+            side = (width - len(text) - 2) // 2
+            print(f"{char * side} {text} {char * (width - len(text) - 2 - side)}")
+
     def run(self):
-        local_ip = self.fs_service.get_local_ip()
-        print("=" * 60)
-        print("QUICKSERVE FILE SERVER API")
-        print("=" * 60)
+        width = self._get_terminal_width()
+
+        print("=" * width)
+        self._print_centered(f"QUICKSERVE FILE SERVER API v{VERSION}", width)
+        print("=" * width)
+
         print(f"PORT:            {self.config.port}")
         print(f"ROOT DIRECTORY:  {self.fs_service.server_root}")
         print(f"CORS ORIGINS:    {self.config.allow_origins}")
         print(f"RECYCLE BIN:     {self.config.use_recycle_bin}")
+
         bf_config = self.config.brute_force_protection
         enabled = bf_config.get("enabled", True)
         print(f"BRUTE FORCE:     {'ENABLED' if enabled else 'DISABLED'}")
@@ -700,17 +767,21 @@ class QuickServe:
             lockout_hours = bf_config.get('lockout_duration', 86400) // 3600
             print(f"  Lockout:       {bf_config.get('max_attempts_before_lockout', 10)} attempts = {lockout_hours}h lockout")
             print(f"  Note:          Server restart clears all locks")
-        print("-" * 60)
+
+        print("-" * width)
         print("ACCESS URLs:")
         print(f"Local:           http://localhost:{self.config.port}")
         print(f"Network:         http://0.0.0.0:{self.config.port}")
+
+        local_ip = self.fs_service.get_local_ip()
         if local_ip != "Unable to determine IP":
             print(f"Local Network:   http://{local_ip}:{self.config.port}")
-        print("-" * 60)
+
+        print("-" * width)
         print("Use the Local URL for access from this machine")
-        print("Use the Local Network URL for access from other devices")
-        print("on the same network")
-        print("=" * 60)
+        print("Use the Local Network URL for access from other devices on the same network")
+        print("=" * width)
+
         log_config = {
             "version": 1,
             "disable_existing_loggers": False,

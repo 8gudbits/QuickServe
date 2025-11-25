@@ -112,6 +112,9 @@ class QuickServeClient {
     this.currentSelectedFile = null;
     this.pendingDeleteFile = null;
     this.suppressLoading = false;
+    this.selectionMode = false;
+    this.selectedFiles = new Set();
+    this.zipSelectBtn = null;
     this.init();
   }
 
@@ -124,6 +127,342 @@ class QuickServeClient {
     await this.loadFiles(initialPath);
     this.setupEventListeners();
     this.setupContextMenu();
+    this.setupZipSelection();
+  }
+
+  setupZipSelection() {
+    this.zipSelectBtn = document.getElementById("zipSelectBtn");
+    this.zipSelectBtn.addEventListener("click", () => {
+      this.toggleSelectionMode();
+    });
+  }
+
+  toggleSelectionMode() {
+    this.selectionMode = !this.selectionMode;
+
+    if (this.selectionMode) {
+      this.enterSelectionMode();
+    } else {
+      this.exitSelectionMode();
+    }
+  }
+
+  enterSelectionMode() {
+    this.selectionMode = true;
+    this.selectedFiles.clear();
+
+    this.zipSelectBtn.innerHTML =
+      '<i class="fas fa-times"></i> <span>Cancel</span>';
+    this.zipSelectBtn.style.background = "var(--error)";
+    this.zipSelectBtn.style.color = "white";
+
+    this.addSelectionUI();
+    this.addZipActions();
+    this.addSelectionControls();
+  }
+
+  exitSelectionMode() {
+    this.selectionMode = false;
+    this.selectedFiles.clear();
+
+    this.zipSelectBtn.innerHTML =
+      '<i class="fas fa-file-archive"></i> <span>Zip</span>';
+    this.zipSelectBtn.style.background = "";
+    this.zipSelectBtn.style.color = "";
+
+    this.removeSelectionUI();
+    this.removeZipActions();
+    this.removeSelectionControls();
+  }
+
+  addSelectionUI() {
+    const filesTableBody = document.getElementById("filesTableBody");
+    const rows = filesTableBody.querySelectorAll("tr.file-item");
+
+    rows.forEach((row) => {
+      const nameCell = row.cells[0];
+      const link = nameCell.querySelector("a");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "file-checkbox";
+      checkbox.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+
+      checkbox.addEventListener("change", (e) => {
+        const file = this.getFileFromRow(row);
+        if (checkbox.checked) {
+          this.selectedFiles.add(file.path);
+          row.classList.add("selected");
+        } else {
+          this.selectedFiles.delete(file.path);
+          row.classList.remove("selected");
+        }
+        this.updateSelectionInfo();
+      });
+
+      const nameCellContent = document.createElement("div");
+      nameCellContent.className = "name-cell-content";
+      nameCellContent.appendChild(checkbox);
+      nameCellContent.appendChild(link);
+
+      nameCell.innerHTML = "";
+      nameCell.appendChild(nameCellContent);
+
+      row.addEventListener("click", (e) => {
+        if (
+          !e.target.matches('input[type="checkbox"]') &&
+          !e.target.matches("a")
+        ) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event("change"));
+        }
+      });
+    });
+
+    document.querySelector(".table-container").classList.add("selection-mode");
+  }
+
+  removeSelectionUI() {
+    const filesTableBody = document.getElementById("filesTableBody");
+    const rows = filesTableBody.querySelectorAll("tr.file-item");
+
+    rows.forEach((row) => {
+      const nameCell = row.cells[0];
+      const nameCellContent = nameCell.querySelector(".name-cell-content");
+      const link = nameCellContent.querySelector("a");
+
+      nameCell.innerHTML = "";
+      nameCell.appendChild(link);
+
+      row.classList.remove("selected");
+    });
+
+    document
+      .querySelector(".table-container")
+      .classList.remove("selection-mode");
+  }
+
+  addSelectionControls() {
+    const tableContainer = document.querySelector(".table-container");
+
+    const controlsRow = document.createElement("div");
+    controlsRow.className = "selection-controls-row";
+    controlsRow.innerHTML = `
+        <button class="control-btn" id="selectAllBtn">
+            <i class="fas fa-check-square"></i> Select All
+        </button>
+        <button class="control-btn" id="selectNoneBtn">
+            <i class="fas fa-square"></i> Select None
+        </button>
+        <button class="control-btn" id="selectFoldersBtn">
+            <i class="fas fa-folder"></i> Select Folders
+        </button>
+        <button class="control-btn" id="selectFilesBtn">
+            <i class="fas fa-file"></i> Select Files
+        </button>
+        <button class="control-btn control-btn-primary" id="downloadSelectedFromPanel" disabled>
+            <i class="fas fa-download"></i> Download as ZIP
+        </button>
+        <div class="selection-stats" id="selectionStats">
+            0 items selected
+        </div>
+    `;
+
+    tableContainer.insertBefore(controlsRow, tableContainer.firstChild);
+
+    document.getElementById("selectAllBtn").addEventListener("click", () => {
+      this.selectAll();
+    });
+
+    document.getElementById("selectNoneBtn").addEventListener("click", () => {
+      this.selectNone();
+    });
+
+    document
+      .getElementById("selectFoldersBtn")
+      .addEventListener("click", () => {
+        this.selectFoldersOnly();
+      });
+
+    document.getElementById("selectFilesBtn").addEventListener("click", () => {
+      this.selectFilesOnly();
+    });
+
+    document
+      .getElementById("downloadSelectedFromPanel")
+      .addEventListener("click", () => {
+        this.downloadSelectedAsZip();
+      });
+  }
+
+  removeSelectionControls() {
+    const controlsRow = document.querySelector(".selection-controls-row");
+    if (controlsRow) {
+      controlsRow.remove();
+    }
+  }
+
+  selectAll() {
+    const checkboxes = document.querySelectorAll(".file-checkbox");
+    checkboxes.forEach((checkbox) => {
+      if (!checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("change"));
+      }
+    });
+  }
+
+  selectNone() {
+    const checkboxes = document.querySelectorAll(".file-checkbox");
+    checkboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event("change"));
+      }
+    });
+  }
+
+  selectFoldersOnly() {
+    const rows = document.querySelectorAll("tr.file-item");
+    rows.forEach((row) => {
+      const checkbox = row.querySelector(".file-checkbox");
+      const isFolder = row.querySelector(".fa-folder") !== null;
+
+      if (isFolder && !checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("change"));
+      } else if (!isFolder && checkbox.checked) {
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event("change"));
+      }
+    });
+  }
+
+  selectFilesOnly() {
+    const rows = document.querySelectorAll("tr.file-item");
+    rows.forEach((row) => {
+      const checkbox = row.querySelector(".file-checkbox");
+      const isFolder = row.querySelector(".fa-folder") !== null;
+
+      if (!isFolder && !checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("change"));
+      } else if (isFolder && checkbox.checked) {
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event("change"));
+      }
+    });
+  }
+
+  addZipActions() {
+    const navButtonsRow = document.querySelector(".nav-buttons-row");
+
+    const zipActions = document.createElement("div");
+    zipActions.className = "zip-actions";
+    zipActions.innerHTML = `
+        <button class="zip-action-btn zip-download" id="downloadSelectedZip" disabled>
+            <i class="fas fa-download"></i> Download Selected
+        </button>
+        <div class="selection-info" id="selectionInfo">
+            0 items selected
+        </div>
+    `;
+
+    navButtonsRow.appendChild(zipActions);
+
+    document
+      .getElementById("downloadSelectedZip")
+      .addEventListener("click", () => {
+        this.downloadSelectedAsZip();
+      });
+  }
+
+  removeZipActions() {
+    const zipActions = document.querySelector(".zip-actions");
+    if (zipActions) {
+      zipActions.remove();
+    }
+  }
+
+  updateSelectionInfo() {
+    const selectionInfo = document.getElementById("selectionInfo");
+    const selectionStats = document.getElementById("selectionStats");
+    const downloadBtn = document.getElementById("downloadSelectedZip");
+    const downloadPanelBtn = document.getElementById(
+      "downloadSelectedFromPanel"
+    );
+
+    if (selectionInfo && downloadBtn && selectionStats && downloadPanelBtn) {
+      const count = this.selectedFiles.size;
+      const message = `${count} item${count !== 1 ? "s" : ""} selected`;
+
+      selectionInfo.textContent = message;
+      selectionStats.textContent = message;
+      downloadBtn.innerHTML = `<i class="fas fa-download"></i> Download Selected (${count})`;
+      downloadPanelBtn.innerHTML = `<i class="fas fa-download"></i> Download as ZIP (${count})`;
+
+      const isDisabled = count === 0;
+      downloadBtn.disabled = isDisabled;
+      downloadPanelBtn.disabled = isDisabled;
+    }
+  }
+
+  getFileFromRow(row) {
+    const nameCell = row.cells[0];
+    const link = nameCell.querySelector("a");
+    const icon = link.querySelector("i");
+    const name = Array.from(link.childNodes)
+      .find((node) => node.nodeType === Node.TEXT_NODE)
+      .textContent.trim();
+    const isFolder = icon.classList.contains("fa-folder");
+
+    return {
+      name: name,
+      path: this.getCurrentPath() ? `${this.getCurrentPath()}/${name}` : name,
+      type: isFolder ? "folder" : "file",
+    };
+  }
+
+  getCurrentPath() {
+    return this.getPathFromURL();
+  }
+
+  async downloadSelectedAsZip() {
+    if (this.selectedFiles.size === 0) {
+      this.showError("Please select at least one file or folder to download");
+      return;
+    }
+
+    if (!this.userPermissions.can_download) {
+      this.showError("You don't have permission to download files");
+      return;
+    }
+
+    try {
+      const paths = Array.from(this.selectedFiles);
+      const pathsParam = paths
+        .map((path) => encodeURIComponent(path))
+        .join("&paths=");
+
+      const url = `${
+        this.serverUrl
+      }/api/download-zip?paths=${pathsParam}&username=${encodeURIComponent(
+        this.username
+      )}&password=${encodeURIComponent(this.password)}`;
+
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      this.showSuccess(`Downloading ${this.selectedFiles.size} items as ZIP`);
+      this.exitSelectionMode();
+    } catch (error) {
+      this.showError("Failed to download selected files: " + error.message);
+    }
   }
 
   async loadUserPermissions() {
@@ -214,7 +553,7 @@ class QuickServeClient {
     });
 
     this.deleteOption.addEventListener("click", () => {
-      if (this.currentSelectedFile) {
+      if (this.currentSelectedFile && this.userPermissions.can_delete) {
         this.deleteFileOrFolder(this.currentSelectedFile);
       }
       this.hideContextMenu();
@@ -340,7 +679,7 @@ class QuickServeClient {
       return;
     }
 
-    const url = `${this.serverUrl}/api/download-zip?path=${encodeURIComponent(
+    const url = `${this.serverUrl}/api/download-zip?paths=${encodeURIComponent(
       folderPath
     )}&username=${encodeURIComponent(
       this.username
@@ -595,6 +934,13 @@ class QuickServeClient {
       emptyState.style.display = "none";
       this.hideLoading();
       this.updateNavigation(actualPath);
+
+      if (this.selectionMode) {
+        setTimeout(() => {
+          this.addSelectionUI();
+          this.updateSelectionInfo();
+        }, 150);
+      }
 
       setTimeout(() => {
         filesTableBody.style.opacity = "1";

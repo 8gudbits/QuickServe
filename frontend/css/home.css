@@ -572,10 +572,6 @@ td a:hover {
     color: var(--error);
 }
 
-.context-menu-item#deleteOption:hover {
-    background: rgba(176, 58, 40, 0.1);
-}
-
 .context-menu-item#deleteOption.disabled {
     color: var(--accent-3);
 }
@@ -707,6 +703,204 @@ td a:hover {
 
 .modal-btn-delete:hover {
     background: #9a3328;
+}
+
+.selection-mode .file-item {
+    cursor: pointer;
+}
+
+.selection-mode .file-item.selected {
+    background: rgba(90, 61, 104, 0.1) !important;
+}
+
+.file-checkbox {
+    display: none;
+    margin-right: 12px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.selection-mode .file-checkbox {
+    display: inline-block;
+}
+
+.selection-mode .menu-column {
+    display: none;
+}
+
+.zip-actions {
+    display: none;
+    gap: 8px;
+    margin-left: auto;
+    align-items: center;
+}
+
+.selection-mode .zip-actions {
+    display: flex;
+}
+
+.zip-action-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.zip-cancel {
+    background: var(--accent-3);
+    color: var(--text);
+}
+
+.zip-download {
+    background: var(--success);
+    color: white;
+    font-weight: 600;
+}
+
+.zip-action-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.zip-cancel:hover {
+    background: #a89ca8;
+}
+
+.zip-download:hover:not(:disabled) {
+    background: #26a345;
+}
+
+.zip-download:disabled {
+    background: rgba(46, 187, 86, 0.5) !important;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.selection-info {
+    display: none;
+    background: rgba(90, 61, 104, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--accent-1);
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+.selection-mode .selection-info {
+    display: block;
+}
+
+.name-cell-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.selection-mode .name-cell-content {
+    padding-left: 0;
+}
+
+.selection-controls-row {
+    display: none;
+    background: var(--accent-1);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    gap: 8px;
+}
+
+.selection-mode .selection-controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+    margin-right: 8px;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.control-btn-primary {
+    background: var(--success);
+    font-weight: 600;
+}
+
+.control-btn-primary:hover {
+    background: #26a345;
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.control-btn:disabled:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.selection-stats {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+@media (max-width: 768px) {
+    .selection-controls-row {
+        padding: 10px 12px;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .control-btn {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 4px;
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+
+    .selection-stats {
+        margin-left: 0;
+        text-align: center;
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    .zip-actions {
+        flex-direction: column;
+        width: 100%;
+        margin-left: 0;
+        margin-top: 8px;
+    }
+
+    .zip-action-btn {
+        width: 100%;
+    }
+
+    .selection-info {
+        margin-left: 0;
+        text-align: center;
+    }
 }
 
 @media (max-width: 820px) {
@@ -925,6 +1119,15 @@ td a:hover {
     .menu-button:hover {
         background: none;
         color: var(--accent-2);
+    }
+
+    .control-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .zip-action-btn:hover:not(:disabled) {
+        transform: none;
+        box-shadow: none;
     }
 }
 

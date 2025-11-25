@@ -132,12 +132,28 @@ class QuickServeClient {
 
   setupZipSelection() {
     this.zipSelectBtn = document.getElementById("zipSelectBtn");
-    this.zipSelectBtn.addEventListener("click", () => {
-      this.toggleSelectionMode();
-    });
+
+    if (!this.userPermissions.can_download) {
+      this.zipSelectBtn.classList.add("disabled");
+      this.zipSelectBtn.style.opacity = "0.5";
+      this.zipSelectBtn.style.cursor = "not-allowed";
+      this.zipSelectBtn.onclick = (e) => {
+        e.preventDefault();
+        this.showError("You don't have permission to download files");
+      };
+    } else {
+      this.zipSelectBtn.addEventListener("click", () => {
+        this.toggleSelectionMode();
+      });
+    }
   }
 
   toggleSelectionMode() {
+    if (!this.userPermissions.can_download) {
+      this.showError("You don't have permission to download files");
+      return;
+    }
+
     this.selectionMode = !this.selectionMode;
 
     if (this.selectionMode) {
@@ -499,6 +515,7 @@ class QuickServeClient {
 
   updateUIWithPermissions() {
     const uploadLabel = document.getElementById("uploadLabel");
+    const zipSelectBtn = document.getElementById("zipSelectBtn");
 
     if (!this.userPermissions.can_upload) {
       uploadLabel.classList.add("disabled");
@@ -507,6 +524,16 @@ class QuickServeClient {
       uploadLabel.onclick = (e) => {
         e.preventDefault();
         this.showError("You don't have permission to upload files");
+      };
+    }
+
+    if (!this.userPermissions.can_download) {
+      zipSelectBtn.classList.add("disabled");
+      zipSelectBtn.style.opacity = "0.5";
+      zipSelectBtn.style.cursor = "not-allowed";
+      zipSelectBtn.onclick = (e) => {
+        e.preventDefault();
+        this.showError("You don't have permission to download files");
       };
     }
   }

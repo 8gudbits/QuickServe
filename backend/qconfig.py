@@ -546,10 +546,10 @@ class QuickServeConfig:
         print(f"  Delete: {user_data.get('can_delete', True)}")
 
         print("\nNew permissions (press Enter to keep current):")
-        can_upload_input = input("Allow file upload? (Y/n): ").strip().lower()
-        can_download_input = input("Allow file download? (Y/n): ").strip().lower()
-        can_see_preview_input = input("Allow file preview? (Y/n): ").strip().lower()
-        can_delete_input = input("Allow file deletion? (Y/n): ").strip().lower()
+        can_upload_input = input("Allow file upload? (y/n): ").strip().lower()
+        can_download_input = input("Allow file download? (y/n): ").strip().lower()
+        can_see_preview_input = input("Allow file preview? (y/n): ").strip().lower()
+        can_delete_input = input("Allow file deletion? (y/n): ").strip().lower()
 
         if can_upload_input:
             user_data["can_upload"] = can_upload_input in ["", "y", "yes"]

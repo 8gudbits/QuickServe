@@ -4,10 +4,38 @@
     --accent-3: #b8a9b8;
     --base: #f3eef1;
     --text: #252225;
-    --success: #2dbb56;
     --gradient: linear-gradient(135deg,
             var(--accent-1) 0%,
             var(--accent-2) 100%);
+
+    --background-header: rgba(255, 255, 255, 0.95);
+    --background-features: rgba(255, 255, 255, 0.5);
+    --background-card: white;
+    --background-footer: var(--accent-1);
+    --background-hero-overlay: radial-gradient(circle at center,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 100%);
+
+    --shadow-header: 0 2px 20px rgba(0, 0, 0, 0.1);
+    --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --shadow-button-primary: 0 4px 15px rgba(90, 61, 104, 0.3);
+    --shadow-button-primary-hover: 0 6px 20px rgba(90, 61, 104, 0.4);
+
+    --border-button-secondary: 2px solid var(--accent-1);
+
+    --text-hero-subtitle: var(--accent-2);
+    --text-button-primary: white;
+    --text-button-secondary: var(--accent-1);
+    --text-footer: white;
+    --text-logo: var(--accent-1);
+
+    --background-button-secondary-hover: var(--accent-1);
+    --text-button-secondary-hover: white;
+
+    --indicator-scroll: var(--accent-1);
+
+    --step-number-background: var(--gradient);
+    --step-number-text: white;
 }
 
 * {
@@ -51,14 +79,14 @@ body {
 
 /* Header */
 header {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--background-header);
     backdrop-filter: blur(10px);
     padding: 1rem 0;
     position: fixed;
     width: 100%;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-header);
 }
 
 nav {
@@ -73,7 +101,7 @@ nav {
     gap: 10px;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--accent-1);
+    color: var(--text-logo);
     text-decoration: none;
 }
 
@@ -101,18 +129,18 @@ nav {
 
 .cta-button {
     background: var(--gradient);
-    color: white;
+    color: var(--text-button-primary);
     padding: 10px 25px;
     border-radius: 25px;
     text-decoration: none;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(90, 61, 104, 0.3);
+    box-shadow: var(--shadow-button-primary);
 }
 
 .cta-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(90, 61, 104, 0.4);
+    box-shadow: var(--shadow-button-primary-hover);
 }
 
 /* Hero Section */
@@ -134,9 +162,7 @@ nav {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at center,
-            transparent 0%,
-            rgba(255, 255, 255, 0.1) 100%);
+    background: var(--background-hero-overlay);
     z-index: -1;
 }
 
@@ -159,7 +185,7 @@ nav {
 .hero p {
     font-size: 1.5rem;
     margin-bottom: 3rem;
-    color: var(--accent-2);
+    color: var(--text-hero-subtitle);
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -185,24 +211,24 @@ nav {
 
 .btn-primary {
     background: var(--gradient);
-    color: white;
-    box-shadow: 0 4px 15px rgba(90, 61, 104, 0.3);
+    color: var(--text-button-primary);
+    box-shadow: var(--shadow-button-primary);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(90, 61, 104, 0.4);
+    box-shadow: var(--shadow-button-primary-hover);
 }
 
 .btn-secondary {
     background: transparent;
-    color: var(--accent-1);
-    border: 2px solid var(--accent-1);
+    color: var(--text-button-secondary);
+    border: var(--border-button-secondary);
 }
 
 .btn-secondary:hover {
-    background: var(--accent-1);
-    color: white;
+    background: var(--background-button-secondary-hover);
+    color: var(--text-button-secondary-hover);
 }
 
 /* Scroll indicator */
@@ -216,7 +242,7 @@ nav {
 
 .scroll-indicator i {
     font-size: 2rem;
-    color: var(--accent-1);
+    color: var(--indicator-scroll);
     opacity: 0.7;
 }
 
@@ -242,7 +268,7 @@ nav {
 /* Features Section */
 .features {
     padding: 100px 0;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--background-features);
     backdrop-filter: blur(10px);
 }
 
@@ -260,11 +286,11 @@ nav {
 }
 
 .feature-card {
-    background: white;
+    background: var(--background-card);
     padding: 2rem;
     border-radius: 15px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-card);
     transition: transform 0.3s ease;
 }
 
@@ -298,10 +324,10 @@ nav {
 }
 
 .step {
-    background: white;
+    background: var(--background-card);
     padding: 2rem;
     border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-card);
     max-width: 250px;
     position: relative;
 }
@@ -311,8 +337,8 @@ nav {
     top: -20px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--gradient);
-    color: white;
+    background: var(--step-number-background);
+    color: var(--step-number-text);
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -324,8 +350,8 @@ nav {
 
 /* Footer */
 footer {
-    background: var(--accent-1);
-    color: white;
+    background: var(--background-footer);
+    color: var(--text-footer);
     text-align: center;
     padding: 2rem 0;
     margin-top: 100px;

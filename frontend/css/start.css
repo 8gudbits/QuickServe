@@ -4,10 +4,37 @@
     --accent-3: #b8a9b8;
     --base: #f3eef1;
     --text: #252225;
-    --success: #2dbb56;
     --gradient: linear-gradient(135deg,
             var(--accent-1) 0%,
             var(--accent-2) 100%);
+
+    --background-header: rgba(255, 255, 255, 0.95);
+    --background-section: rgba(255, 255, 255, 0.7);
+    --background-code: #2d2d2d;
+    --background-code-header: #3d3d3d;
+    --background-note: #fff9e6;
+    --background-inline-code: #f0f0f0;
+    --background-footer: var(--accent-1);
+    --background-copy-button: rgba(255, 255, 255, 0.2);
+
+    --shadow-header: 0 2px 20px rgba(0, 0, 0, 0.1);
+    --shadow-section: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --shadow-button: 0 4px 15px rgba(90, 61, 104, 0.3);
+    --shadow-button-hover: 0 6px 20px rgba(90, 61, 104, 0.4);
+
+    --border-step: 1px solid rgba(90, 61, 104, 0.1);
+    --border-code: 1px solid #555;
+    --border-note: 4px solid #ffc107;
+
+    --text-header: var(--accent-1);
+    --text-button: white;
+    --text-footer: white;
+    --text-code: #f8f8f2;
+    --text-note-title: #856404;
+    --text-page-subtitle: var(--accent-2);
+    --text-step-title: var(--accent-1);
+
+    --background-copy-button-hover: rgba(255, 255, 255, 0.3);
 }
 
 * {
@@ -50,14 +77,14 @@ body {
 }
 
 header {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--background-header);
     backdrop-filter: blur(10px);
     padding: 1rem 0;
     position: fixed;
     width: 100%;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-header);
 }
 
 nav {
@@ -72,7 +99,7 @@ nav {
     gap: 10px;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--accent-1);
+    color: var(--text-header);
     text-decoration: none;
 }
 
@@ -100,18 +127,18 @@ nav {
 
 .cta-button {
     background: var(--gradient);
-    color: white;
+    color: var(--text-button);
     padding: 10px 25px;
     border-radius: 25px;
     text-decoration: none;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(90, 61, 104, 0.3);
+    box-shadow: var(--shadow-button);
 }
 
 .cta-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(90, 61, 104, 0.4);
+    box-shadow: var(--shadow-button-hover);
 }
 
 .main-content {
@@ -123,32 +150,32 @@ nav {
     text-align: center;
     margin-bottom: 3rem;
     font-size: 2.5rem;
-    color: var(--accent-1);
+    color: var(--text-header);
 }
 
 .page-subtitle {
     text-align: center;
     margin-bottom: 4rem;
     font-size: 1.2rem;
-    color: var(--accent-2);
+    color: var(--text-page-subtitle);
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
 }
 
 .getting-started {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--background-section);
     backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 3rem;
     margin-bottom: 4rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-section);
 }
 
 .step {
     margin-bottom: 3rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid rgba(90, 61, 104, 0.1);
+    border-bottom: var(--border-step);
 }
 
 .step:last-child {
@@ -165,7 +192,7 @@ nav {
 
 .step-number {
     background: var(--gradient);
-    color: white;
+    color: var(--text-button);
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -179,7 +206,7 @@ nav {
 
 .step-title {
     font-size: 1.5rem;
-    color: var(--accent-1);
+    color: var(--text-step-title);
 }
 
 .step-content {
@@ -192,8 +219,8 @@ nav {
 }
 
 .code-block {
-    background: #2d2d2d;
-    color: #f8f8f2;
+    background: var(--background-code);
+    color: var(--text-code);
     padding: 0;
     border-radius: 8px;
     font-family: "Courier New", monospace;
@@ -203,11 +230,11 @@ nav {
 }
 
 .code-header {
-    background: #3d3d3d;
+    background: var(--background-code-header);
     padding: 4px 12px;
     display: flex;
     justify-content: flex-end;
-    border-bottom: 1px solid #555;
+    border-bottom: var(--border-code);
 }
 
 .code-content {
@@ -222,8 +249,8 @@ nav {
 }
 
 .copy-btn {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+    background: var(--background-copy-button);
+    color: var(--text-button);
     border: none;
     padding: 3px 8px;
     border-radius: 3px;
@@ -234,13 +261,13 @@ nav {
 }
 
 .copy-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--background-copy-button-hover);
     transform: translateY(-1px);
 }
 
 .note {
-    background: #fff9e6;
-    border-left: 4px solid #ffc107;
+    background: var(--background-note);
+    border-left: var(--border-note);
     padding: 1rem;
     margin: 1.5rem 0;
     border-radius: 0 8px 8px 0;
@@ -249,7 +276,7 @@ nav {
 .note-title {
     font-weight: bold;
     margin-bottom: 0.5rem;
-    color: #856404;
+    color: var(--text-note-title);
 }
 
 .download-section {
@@ -263,7 +290,7 @@ nav {
 
 .download-btn {
     background: var(--gradient);
-    color: white;
+    color: var(--text-button);
     padding: 15px 40px;
     border-radius: 8px;
     text-decoration: none;
@@ -273,12 +300,12 @@ nav {
     align-items: center;
     gap: 10px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(90, 61, 104, 0.3);
+    box-shadow: var(--shadow-button);
 }
 
 .download-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(90, 61, 104, 0.4);
+    box-shadow: var(--shadow-button-hover);
 }
 
 .instruction-list {
@@ -292,7 +319,7 @@ nav {
 }
 
 .instruction-list code {
-    background: #f0f0f0;
+    background: var(--background-inline-code);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
@@ -300,12 +327,12 @@ nav {
 }
 
 .next-steps {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--background-section);
     backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 3rem;
     margin-top: 4rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-section);
 }
 
 .next-steps-content {
@@ -314,7 +341,7 @@ nav {
 
 .next-steps-content h2 {
     margin-bottom: 1.5rem;
-    color: var(--accent-1);
+    color: var(--text-header);
 }
 
 .next-steps-content p {
@@ -326,8 +353,8 @@ nav {
 }
 
 footer {
-    background: var(--accent-1);
-    color: white;
+    background: var(--background-footer);
+    color: var(--text-footer);
     text-align: center;
     padding: 2rem 0;
     margin-top: 100px;

@@ -9,6 +9,37 @@
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+
+    --background-primary: #ffffff;
+    --background-secondary: #a89ca8;
+    --background-modal: #ffffff;
+    --background-toast: #ffffff;
+    --background-selection: rgba(90, 61, 104, 0.1);
+    --background-hover: rgba(90, 61, 104, 0.1);
+    --background-info: rgba(90, 61, 104, 0.08);
+
+    --border-primary: rgba(90, 61, 104, 0.1);
+    --border-secondary: #b8a9b8;
+
+    --text-inverse: #ffffff;
+    --text-secondary: #7a6a82;
+    --text-disabled: #b8a9b8;
+
+    --button-primary-hover: #a89ca8;
+    --button-success-hover: #26a345;
+    --button-error-hover: #9a3328;
+    --button-disabled: rgba(46, 187, 86, 0.5);
+
+    --state-hover: rgba(90, 61, 104, 0.05);
+    --state-selected: rgba(90, 61, 104, 0.1);
+    --state-overlay: rgba(0, 0, 0, 0.5);
+
+    --shadow-inner-light: rgba(255, 255, 255, 0.8);
+    --shadow-inner-dark: rgba(0, 0, 0, 0.05);
+
+    --interactive-hover: rgba(255, 255, 255, 0.3);
+    --interactive-active: rgba(255, 255, 255, 0.2);
+    --interactive-disabled: rgba(255, 255, 255, 0.2);
 }
 
 * {
@@ -64,7 +95,7 @@ body {
     right: 0;
     bottom: 0;
     border-radius: 18px;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 1px var(--shadow-inner-light), inset 0 -1px 1px var(--shadow-inner-dark);
     pointer-events: none;
     z-index: -1;
 }
@@ -103,11 +134,11 @@ body {
     white-space: nowrap;
     overflow: hidden;
     max-width: 100%;
-    background: rgba(90, 61, 104, 0.08);
+    background: var(--background-info);
     padding: 8px 12px;
     border-radius: 10px;
     flex: 1;
-    border: 1px solid rgba(90, 61, 104, 0.1);
+    border: 1px solid var(--border-primary);
     min-width: 0;
 }
 
@@ -164,7 +195,7 @@ body {
 .btn-secondary:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    background: #a89ca8;
+    background: var(--background-secondary);
 }
 
 .btn-secondary:disabled {
@@ -193,12 +224,12 @@ body {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: white;
+    background: var(--background-primary);
     padding: 12px;
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
     margin-top: 5px;
-    border: 1px solid var(--accent-3);
+    border: 1px solid var(--border-secondary);
     min-width: 320px;
     width: 320px;
 }
@@ -212,7 +243,7 @@ body {
 .search-input-row input {
     flex: 1;
     padding: 10px 12px;
-    border: 1px solid var(--accent-3);
+    border: 1px solid var(--border-secondary);
     border-radius: 6px;
     font-size: 0.9rem;
     background: var(--base);
@@ -232,7 +263,7 @@ body {
     width: 100% !important;
     height: 36px !important;
     background: var(--accent-1) !important;
-    color: white !important;
+    color: var(--text-inverse) !important;
     padding: 0 16px !important;
     justify-content: center !important;
 }
@@ -249,7 +280,7 @@ body {
     max-height: 300px;
     overflow-y: auto;
     margin-top: 8px;
-    border-top: 1px solid var(--accent-3);
+    border-top: 1px solid var(--border-secondary);
     padding-top: 8px;
 }
 
@@ -265,7 +296,7 @@ body {
 
 .search-result-count {
     background: var(--accent-1);
-    color: white;
+    color: var(--text-inverse);
     padding: 2px 6px;
     border-radius: 10px;
     font-size: 0.7rem;
@@ -282,12 +313,12 @@ body {
 }
 
 .search-result-item:hover {
-    background: rgba(90, 61, 104, 0.1);
+    background: var(--background-hover);
 }
 
 .search-result-path {
     font-size: 0.8rem;
-    color: var(--accent-2);
+    color: var(--text-secondary);
     margin-left: auto;
 }
 
@@ -311,13 +342,13 @@ th,
 td {
     padding: 12px 10px;
     text-align: left;
-    border-bottom: 1px solid var(--accent-3);
+    border-bottom: 1px solid var(--border-secondary);
     word-break: break-word;
 }
 
 th {
     background: var(--accent-1);
-    color: white;
+    color: var(--text-inverse);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.8rem;
@@ -347,20 +378,20 @@ td a:hover {
 .empty-state {
     text-align: center;
     padding: 30px 15px;
-    color: var(--accent-2);
+    color: var(--text-secondary);
     font-size: 1rem;
 }
 
 .empty-state i {
     font-size: 2rem;
     margin-bottom: 10px;
-    color: var(--accent-3);
+    color: var(--text-disabled);
 }
 
 .loading {
     text-align: center;
     padding: 30px 15px;
-    color: var(--accent-2);
+    color: var(--text-secondary);
 }
 
 .loading i {
@@ -389,7 +420,7 @@ td a:hover {
     animation: slideInRight 0.3s ease-out;
     transition: all 0.3s ease;
     transform: translateX(0);
-    background: white;
+    background: var(--background-toast);
     border-left: 4px solid;
 }
 
@@ -449,7 +480,7 @@ td a:hover {
 
 .toast-close:hover {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--background-hover);
 }
 
 @keyframes slideInRight {
@@ -478,7 +509,7 @@ td a:hover {
 
 .search-header-row {
     background: var(--accent-1) !important;
-    color: white !important;
+    color: var(--text-inverse) !important;
 }
 
 .search-header-row td {
@@ -492,10 +523,10 @@ td a:hover {
     margin-left: 10px;
     padding: 4px 8px !important;
     font-size: 0.75rem !important;
-    background: rgba(255, 255, 255, 0.2) !important;
+    background: var(--interactive-active) !important;
     border: none;
     border-radius: 4px;
-    color: white;
+    color: var(--text-inverse);
     cursor: pointer;
     transition: background-color 0.2s ease;
     height: auto !important;
@@ -503,12 +534,12 @@ td a:hover {
 }
 
 .clear-search-btn:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
+    background: var(--interactive-hover) !important;
 }
 
 .file-directory {
     font-size: 0.8rem;
-    color: var(--accent-2);
+    color: var(--text-secondary);
     margin-left: 8px;
     font-style: italic;
 }
@@ -525,12 +556,12 @@ td a:hover {
 
 .context-menu {
     position: fixed;
-    background: white;
+    background: var(--background-primary);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
     z-index: 10000;
     min-width: 180px;
-    border: 1px solid var(--accent-3);
+    border: 1px solid var(--border-secondary);
     display: none;
     animation: fadeIn 0.15s ease-out;
 }
@@ -542,7 +573,7 @@ td a:hover {
     align-items: center;
     gap: 8px;
     transition: background-color 0.2s ease;
-    border-bottom: 1px solid var(--accent-3);
+    border-bottom: 1px solid var(--border-secondary);
     font-size: 0.9rem;
 }
 
@@ -551,7 +582,7 @@ td a:hover {
 }
 
 .context-menu-item:hover {
-    background: rgba(90, 61, 104, 0.1);
+    background: var(--background-hover);
 }
 
 .context-menu-item i {
@@ -573,7 +604,7 @@ td a:hover {
 }
 
 .context-menu-item#deleteOption.disabled {
-    color: var(--accent-3);
+    color: var(--text-disabled);
 }
 
 .file-item {
@@ -582,7 +613,7 @@ td a:hover {
 }
 
 .file-item:hover {
-    background: rgba(90, 61, 104, 0.05) !important;
+    background: var(--state-hover) !important;
 }
 
 .menu-column {
@@ -593,7 +624,7 @@ td a:hover {
 .menu-button {
     background: none;
     border: none;
-    color: var(--accent-2);
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 8px;
     border-radius: 4px;
@@ -606,7 +637,7 @@ td a:hover {
 }
 
 .menu-button:hover {
-    background: rgba(90, 61, 104, 0.1);
+    background: var(--background-hover);
     color: var(--accent-1);
 }
 
@@ -632,7 +663,7 @@ td a:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--state-overlay);
     display: none;
     justify-content: center;
     align-items: center;
@@ -641,7 +672,7 @@ td a:hover {
 }
 
 .modal-content {
-    background: white;
+    background: var(--background-modal);
     padding: 24px;
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
@@ -666,7 +697,7 @@ td a:hover {
 }
 
 .modal-message {
-    color: var(--accent-2);
+    color: var(--text-secondary);
     margin-bottom: 20px;
     line-height: 1.4;
 }
@@ -693,16 +724,16 @@ td a:hover {
 }
 
 .modal-btn-cancel:hover {
-    background: #a89ca8;
+    background: var(--button-primary-hover);
 }
 
 .modal-btn-delete {
     background: var(--error);
-    color: white;
+    color: var(--text-inverse);
 }
 
 .modal-btn-delete:hover {
-    background: #9a3328;
+    background: var(--button-error-hover);
 }
 
 .selection-mode .file-item {
@@ -710,7 +741,7 @@ td a:hover {
 }
 
 .selection-mode .file-item.selected {
-    background: rgba(90, 61, 104, 0.1) !important;
+    background: var(--state-selected) !important;
 }
 
 .file-checkbox {
@@ -758,7 +789,7 @@ td a:hover {
 
 .zip-download {
     background: var(--success);
-    color: white;
+    color: var(--text-inverse);
     font-weight: 600;
 }
 
@@ -768,15 +799,15 @@ td a:hover {
 }
 
 .zip-cancel:hover {
-    background: #a89ca8;
+    background: var(--button-primary-hover);
 }
 
 .zip-download:hover:not(:disabled) {
-    background: #26a345;
+    background: var(--button-success-hover);
 }
 
 .zip-download:disabled {
-    background: rgba(46, 187, 86, 0.5) !important;
+    background: var(--button-disabled) !important;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -784,7 +815,7 @@ td a:hover {
 
 .selection-info {
     display: none;
-    background: rgba(90, 61, 104, 0.1);
+    background: var(--background-selection);
     padding: 8px 12px;
     border-radius: 8px;
     font-size: 0.9rem;
@@ -810,7 +841,7 @@ td a:hover {
 .selection-controls-row {
     display: none;
     background: var(--accent-1);
-    color: white;
+    color: var(--text-inverse);
     padding: 12px 16px;
     border-radius: 8px;
     margin-bottom: 12px;
@@ -824,8 +855,8 @@ td a:hover {
 }
 
 .control-btn {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+    background: var(--interactive-active);
+    color: var(--text-inverse);
     border: none;
     padding: 8px 12px;
     border-radius: 4px;
@@ -837,7 +868,7 @@ td a:hover {
 }
 
 .control-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--interactive-hover);
 }
 
 .control-btn-primary {
@@ -846,7 +877,7 @@ td a:hover {
 }
 
 .control-btn-primary:hover {
-    background: #26a345;
+    background: var(--button-success-hover);
 }
 
 .control-btn:disabled {
@@ -855,7 +886,7 @@ td a:hover {
 }
 
 .control-btn:disabled:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--interactive-disabled);
 }
 
 .selection-stats {
@@ -1118,11 +1149,11 @@ td a:hover {
 
     .menu-button:hover {
         background: none;
-        color: var(--accent-2);
+        color: var(--text-secondary);
     }
 
     .control-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--interactive-active);
     }
 
     .zip-action-btn:hover:not(:disabled) {
@@ -1138,6 +1169,10 @@ td a:hover {
         --accent-3: #666666;
         --base: #ffffff;
         --text: #000000;
+        --background-primary: #ffffff;
+        --background-secondary: #666666;
+        --text-inverse: #ffffff;
+        --text-secondary: #333333;
     }
 }
 

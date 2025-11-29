@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 APPNAME = "QuickServe API"
-VERSION = "3.2.0-rc4"
+VERSION = "3.2.0-rc5"
 
 
 class BruteForceProtection:
@@ -245,17 +245,21 @@ class FileSystemService:
             recycle_bin_path = os.path.join(dir_path, ".recycle_bin")
             if not os.path.exists(recycle_bin_path):
                 os.makedirs(recycle_bin_path)
-            filename = os.path.basename(absolute_path)
-            destination = os.path.join(recycle_bin_path, filename)
+            item_name = os.path.basename(absolute_path)
+            destination = os.path.join(recycle_bin_path, item_name)
             counter = 1
             while os.path.exists(destination):
-                name, ext = os.path.splitext(filename)
-                new_filename = f"{name} ({counter}){ext}"
-                destination = os.path.join(recycle_bin_path, new_filename)
+                if os.path.isfile(absolute_path):
+                    name, ext = os.path.splitext(item_name)
+                    new_name = f"{name} ({counter}){ext}"
+                else:
+                    new_name = f"{item_name} ({counter})"
+                destination = os.path.join(recycle_bin_path, new_name)
                 counter += 1
             shutil.move(absolute_path, destination)
             return True
-        except Exception:
+        except Exception as e:
+            print(f"Error moving to recycle bin: {e}")
             return False
 
     def get_files_in_directory(self, clean_path: str) -> List[FileEntry]:
@@ -635,48 +639,47 @@ class QuickServe:
                 raise HTTPException(
                     status_code=404, detail="File or directory not found"
                 )
+            
             if os.path.isfile(absolute_path):
                 if self.config.use_recycle_bin:
                     moved = self.fs_service.move_to_recycle_bin(absolute_path)
                     if moved:
                         return {
                             "status": "success",
-                            "message": "File moved to recycle bin",
+                            "message": "File deleted successfully",
                         }
                     else:
-                        os.remove(absolute_path)
-                        return {
-                            "status": "success",
-                            "message": "File deleted permanently (recycle bin failed)",
-                        }
+                        raise HTTPException(
+                            status_code=500, 
+                            detail="Unable to delete file (operation failed)"
+                        )
                 else:
                     os.remove(absolute_path)
-                    return {"status": "success", "message": "File deleted permanently"}
+                    return {
+                        "status": "success", 
+                        "message": "File deleted successfully"
+                    }
+            
             elif os.path.isdir(absolute_path):
-                if len(os.listdir(absolute_path)) == 0:
-                    if self.config.use_recycle_bin:
-                        moved = self.fs_service.move_to_recycle_bin(absolute_path)
-                        if moved:
-                            return {
-                                "status": "success",
-                                "message": "Empty directory moved to recycle bin",
-                            }
-                        else:
-                            os.rmdir(absolute_path)
-                            return {
-                                "status": "success",
-                                "message": "Empty directory deleted permanently (recycle bin failed)",
-                            }
-                    else:
-                        os.rmdir(absolute_path)
+                if self.config.use_recycle_bin:
+                    moved = self.fs_service.move_to_recycle_bin(absolute_path)
+                    if moved:
                         return {
                             "status": "success",
-                            "message": "Empty directory deleted permanently",
+                            "message": "Directory deleted successfully",
                         }
+                    else:
+                        raise HTTPException(
+                            status_code=500,
+                            detail="Unable to delete directory (operation failed)"
+                        )
                 else:
-                    raise HTTPException(
-                        status_code=400, detail="Directory is not empty"
-                    )
+                    shutil.rmtree(absolute_path)
+                    return {
+                        "status": "success",
+                        "message": "Directory deleted successfully",
+                    }
+            
             else:
                 raise HTTPException(
                     status_code=400, detail="Path is not a file or directory"
@@ -695,7 +698,7 @@ class QuickServe:
         return HealthResponse(
             status="healthy",
             service="QuickServe API",
-            version="3.2.0-rc2",
+            version=f"{VERSION}",
             uptime=self.fs_service.get_uptime(),
             brute_force_protection={
                 "enabled": self.config.brute_force_protection.get("enabled", True),

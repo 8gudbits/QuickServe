@@ -1,15 +1,18 @@
 class QuickServeClient {
   constructor() {
-    this.serverUrl = sessionStorage.getItem("quickserve_server");
-    this.username = sessionStorage.getItem("quickserve_username");
-    this.password = sessionStorage.getItem("quickserve_password");
+    this.serverUrl = localStorage.getItem("quickserve_server");
+    this.token = localStorage.getItem("quickserve_token");
+    this.username = localStorage.getItem("quickserve_username");
+    this.permissions = JSON.parse(
+      localStorage.getItem("quickserve_permissions") || "{}"
+    );
 
-    if (!this.serverUrl || !this.username) {
+    if (!this.serverUrl || !this.token) {
       window.location.href = "login.html";
       return;
     }
 
-    this.userPermissions = null;
+    this.userPermissions = this.permissions;
     this.previewableTypes = [
       // Text & Documents
       "txt",
@@ -119,7 +122,7 @@ class QuickServeClient {
   }
 
   async init() {
-    await this.loadUserPermissions();
+    await this.verifyToken();
     this.updateServerInfo();
     this.updateUIWithPermissions();
 
@@ -128,6 +131,224 @@ class QuickServeClient {
     this.setupEventListeners();
     this.setupContextMenu();
     this.setupZipSelection();
+  }
+
+  async verifyToken() {
+    try {
+      const response = await fetch(`${this.serverUrl}/api/verify-token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Token invalid");
+      }
+    } catch (error) {
+      this.handleAuthError();
+    }
+  }
+
+  getAuthHeaders() {
+    return {
+      Authorization: `Bearer ${this.token}`,
+      "Content-Type": "application/json",
+    };
+  }
+
+  async downloadFile(filePath) {
+    if (!this.userPermissions.can_download) {
+      this.showError("You don't have permission to download files");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${this.serverUrl}/api/download?path=${encodeURIComponent(filePath)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+
+      const filename = filePath.split("/").pop() || "download";
+      a.download = filename;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.showSuccess("File download started");
+    } catch (error) {
+      this.showError(`Download failed: ${error.message}`);
+    }
+  }
+
+  async previewFile(file) {
+    if (!this.userPermissions.can_see_preview) {
+      this.showError("You don't have permission to preview files");
+      return;
+    }
+
+    if (!this.isPreviewable(file)) {
+      this.showError("This file type cannot be previewed");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${this.serverUrl}/api/preview?path=${encodeURIComponent(file.path)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Preview failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const previewWindow = window.open(url, "_blank");
+
+      if (!previewWindow) {
+        this.showInfo("Popup blocked! Opening file in same tab");
+        window.location.href = url;
+      }
+
+      this.showSuccess("File preview opened");
+    } catch (error) {
+      this.showError(`Preview failed: ${error.message}`);
+    }
+  }
+
+  handleFileClick(file) {
+    if (file.type === "folder") {
+      this.navigateToPath(file.path);
+    } else {
+      this.downloadFile(file.path);
+    }
+  }
+
+  setupContextMenu() {
+    this.contextMenu = document.getElementById("contextMenu");
+    this.contextMenuOverlay = document.getElementById("contextMenuOverlay");
+    this.previewOption = document.getElementById("previewOption");
+    this.downloadOption = document.getElementById("downloadOption");
+    this.openOption = document.getElementById("openOption");
+    this.downloadZipOption = document.getElementById("downloadZipOption");
+    this.deleteOption = document.getElementById("deleteOption");
+
+    this.contextMenuOverlay.addEventListener("click", () => {
+      this.hideContextMenu();
+    });
+
+    this.previewOption.addEventListener("click", () => {
+      if (this.currentSelectedFile && this.userPermissions.can_see_preview) {
+        this.previewFile(this.currentSelectedFile);
+      }
+      this.hideContextMenu();
+    });
+
+    this.downloadOption.addEventListener("click", () => {
+      if (this.currentSelectedFile && this.userPermissions.can_download) {
+        this.downloadFile(this.currentSelectedFile.path);
+      }
+      this.hideContextMenu();
+    });
+
+    this.openOption.addEventListener("click", () => {
+      if (this.currentSelectedFile) {
+        this.navigateToPath(this.currentSelectedFile.path);
+      }
+      this.hideContextMenu();
+    });
+
+    this.downloadZipOption.addEventListener("click", () => {
+      if (this.currentSelectedFile && this.userPermissions.can_download) {
+        this.downloadFolderAsZip(this.currentSelectedFile.path);
+      }
+      this.hideContextMenu();
+    });
+
+    this.deleteOption.addEventListener("click", () => {
+      if (this.currentSelectedFile && this.userPermissions.can_delete) {
+        this.deleteFileOrFolder(this.currentSelectedFile);
+      }
+      this.hideContextMenu();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.hideContextMenu();
+      }
+    });
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        this.hideContextMenu();
+      },
+      true
+    );
+  }
+
+  async downloadFolderAsZip(folderPath) {
+    if (!this.userPermissions.can_download) {
+      this.showError("You don't have permission to download files");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${this.serverUrl}/api/download-zip?paths=${encodeURIComponent(
+          folderPath
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = `${folderPath.split("/").pop() || "folder"}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.showSuccess("Folder download started");
+    } catch (error) {
+      this.showError(`Download failed: ${error.message}`);
+    }
   }
 
   setupZipSelection() {
@@ -461,55 +682,35 @@ class QuickServeClient {
         .map((path) => encodeURIComponent(path))
         .join("&paths=");
 
-      const url = `${
-        this.serverUrl
-      }/api/download-zip?paths=${pathsParam}&username=${encodeURIComponent(
-        this.username
-      )}&password=${encodeURIComponent(this.password)}`;
+      const response = await fetch(
+        `${this.serverUrl}/api/download-zip?paths=${pathsParam}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        }
+      );
 
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
       a.href = url;
+      a.download = `selected_files_${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
 
       this.showSuccess(`Downloading ${this.selectedFiles.size} items as ZIP`);
       this.exitSelectionMode();
     } catch (error) {
       this.showError("Failed to download selected files: " + error.message);
-    }
-  }
-
-  async loadUserPermissions() {
-    try {
-      const url = `${
-        this.serverUrl
-      }/api/permissions?username=${encodeURIComponent(
-        this.username
-      )}&password=${encodeURIComponent(this.password)}`;
-      const response = await fetch(url, {
-        method: "GET",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        this.userPermissions = data.permissions;
-      } else {
-        this.userPermissions = {
-          can_upload: true,
-          can_download: true,
-          can_see_preview: true,
-          can_delete: true,
-        };
-      }
-    } catch (error) {
-      this.userPermissions = {
-        can_upload: true,
-        can_download: true,
-        can_see_preview: true,
-        can_delete: true,
-      };
     }
   }
 
@@ -536,69 +737,6 @@ class QuickServeClient {
         this.showError("You don't have permission to download files");
       };
     }
-  }
-
-  setupContextMenu() {
-    this.contextMenu = document.getElementById("contextMenu");
-    this.contextMenuOverlay = document.getElementById("contextMenuOverlay");
-    this.previewOption = document.getElementById("previewOption");
-    this.downloadOption = document.getElementById("downloadOption");
-    this.openOption = document.getElementById("openOption");
-    this.downloadZipOption = document.getElementById("downloadZipOption");
-    this.deleteOption = document.getElementById("deleteOption");
-
-    this.contextMenuOverlay.addEventListener("click", () => {
-      this.hideContextMenu();
-    });
-
-    this.previewOption.addEventListener("click", () => {
-      if (this.currentSelectedFile && this.userPermissions.can_see_preview) {
-        this.previewFile(this.currentSelectedFile);
-      }
-      this.hideContextMenu();
-    });
-
-    this.downloadOption.addEventListener("click", () => {
-      if (this.currentSelectedFile && this.userPermissions.can_download) {
-        this.downloadFile(this.currentSelectedFile.path);
-      }
-      this.hideContextMenu();
-    });
-
-    this.openOption.addEventListener("click", () => {
-      if (this.currentSelectedFile) {
-        this.navigateToPath(this.currentSelectedFile.path);
-      }
-      this.hideContextMenu();
-    });
-
-    this.downloadZipOption.addEventListener("click", () => {
-      if (this.currentSelectedFile && this.userPermissions.can_download) {
-        this.downloadFolderAsZip(this.currentSelectedFile.path);
-      }
-      this.hideContextMenu();
-    });
-
-    this.deleteOption.addEventListener("click", () => {
-      if (this.currentSelectedFile && this.userPermissions.can_delete) {
-        this.deleteFileOrFolder(this.currentSelectedFile);
-      }
-      this.hideContextMenu();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        this.hideContextMenu();
-      }
-    });
-
-    window.addEventListener(
-      "scroll",
-      () => {
-        this.hideContextMenu();
-      },
-      true
-    );
   }
 
   showContextMenu(x, y, file) {
@@ -668,75 +806,10 @@ class QuickServeClient {
     return this.previewableTypes.includes(fileExt);
   }
 
-  previewFile(file) {
-    if (!this.userPermissions.can_see_preview) {
-      this.showError("You don't have permission to preview files");
-      return;
-    }
-
-    const url = `${this.serverUrl}/api/preview?path=${encodeURIComponent(
-      file.path
-    )}&username=${encodeURIComponent(
-      this.username
-    )}&password=${encodeURIComponent(this.password)}`;
-    window.open(url, "_blank");
-  }
-
-  handleFileClick(file) {
-    if (file.type === "folder") {
-      this.navigateToPath(file.path);
-    } else {
-      if (this.userPermissions.can_download) {
-        this.downloadFile(file.path);
-      } else {
-        this.showError("You don't have permission to download files");
-      }
-    }
-  }
-
   handleMenuButtonClick(file, event) {
     event.stopPropagation();
     const rect = event.target.getBoundingClientRect();
     this.showContextMenu(rect.right - 180, rect.bottom + 5, file);
-  }
-
-  downloadFolderAsZip(folderPath) {
-    if (!this.userPermissions.can_download) {
-      this.showError("You don't have permission to download files");
-      return;
-    }
-
-    const url = `${this.serverUrl}/api/download-zip?paths=${encodeURIComponent(
-      folderPath
-    )}&username=${encodeURIComponent(
-      this.username
-    )}&password=${encodeURIComponent(this.password)}`;
-    const a = document.createElement("a");
-    a.style.display = "none";
-    a.href = url;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    this.showSuccess("Folder download started");
-  }
-
-  downloadFile(filePath) {
-    if (!this.userPermissions.can_download) {
-      this.showError("You don't have permission to download files");
-      return;
-    }
-
-    const url = `${this.serverUrl}/api/download?path=${encodeURIComponent(
-      filePath
-    )}&username=${encodeURIComponent(
-      this.username
-    )}&password=${encodeURIComponent(this.password)}`;
-    const a = document.createElement("a");
-    a.style.display = "none";
-    a.href = url;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   }
 
   deleteFileOrFolder(file) {
@@ -775,12 +848,13 @@ class QuickServeClient {
 
     try {
       const formData = new FormData();
-      formData.append("username", this.username);
-      formData.append("password", this.password);
       formData.append("path", file.path);
 
       const response = await fetch(`${this.serverUrl}/api/delete`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
         body: formData,
       });
 
@@ -859,6 +933,7 @@ class QuickServeClient {
       )}`;
       const response = await fetch(url, {
         method: "GET",
+        headers: this.getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -985,12 +1060,13 @@ class QuickServeClient {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("path", currentPath);
-    formData.append("username", this.username);
-    formData.append("password", this.password);
 
     try {
       const response = await fetch(`${this.serverUrl}/api/upload`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
         body: formData,
       });
 
@@ -1025,6 +1101,7 @@ class QuickServeClient {
       )}&pattern=${encodeURIComponent(pattern)}`;
       const response = await fetch(url, {
         method: "GET",
+        headers: this.getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -1134,7 +1211,12 @@ class QuickServeClient {
   }
 
   handleAuthError() {
-    sessionStorage.clear();
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+
+  logout() {
+    localStorage.clear();
     window.location.href = "login.html";
   }
 
@@ -1282,8 +1364,7 @@ class QuickServeClient {
 
     document.getElementById("logoutLink").addEventListener("click", (e) => {
       e.preventDefault();
-      sessionStorage.clear();
-      window.location.href = "login.html";
+      this.logout();
     });
 
     document.getElementById("cancelDelete").addEventListener("click", () => {

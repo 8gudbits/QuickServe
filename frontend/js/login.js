@@ -50,7 +50,6 @@ loginForm.addEventListener("submit", async function (e) {
   }
 
   try {
-    // Hash the password with SHA256 before sending
     const hashedPassword = await sha256(passwordValue);
 
     const response = await fetch(`${serverUrl}/api/login`, {
@@ -65,12 +64,16 @@ loginForm.addEventListener("submit", async function (e) {
     });
 
     if (response.ok) {
-      // Store server URL and credentials in session storage
-      sessionStorage.setItem("quickserve_server", serverUrl);
-      sessionStorage.setItem("quickserve_username", username);
-      sessionStorage.setItem("quickserve_password", hashedPassword);
+      const data = await response.json();
 
-      // Redirect to home page
+      localStorage.setItem("quickserve_server", serverUrl);
+      localStorage.setItem("quickserve_token", data.token);
+      localStorage.setItem("quickserve_username", username);
+      localStorage.setItem(
+        "quickserve_permissions",
+        JSON.stringify(data.permissions)
+      );
+
       window.location.href = "home.html";
     } else {
       const errorData = await response.json();
@@ -96,9 +99,8 @@ function resetSubmitButton() {
   submitBtn.innerHTML = "CONNECT TO SERVER";
 }
 
-// Auto-fill server URL if returning
 window.addEventListener("load", function () {
-  const savedServer = sessionStorage.getItem("quickserve_server");
+  const savedServer = localStorage.getItem("quickserve_server");
   if (savedServer) {
     document.getElementById("server").value = savedServer;
   }

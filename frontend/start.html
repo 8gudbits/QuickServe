@@ -76,17 +76,22 @@
               <p>
                 If you're using the source code version, ensure you have Python
                 + Pip installed and install the required dependencies:
-              </p><br>
+              </p>
+              <br />
 
               <div class="code-block">
-                <button
-                  class="copy-btn"
-                  onclick="copyCode(this)"
-                  aria-label="Copy code to clipboard"
-                >
-                  Copy
-                </button>
-                <code>pip install -r backend/requirements.txt</code>
+                <div class="code-header">
+                  <button
+                    class="copy-btn"
+                    onclick="copyCode(this)"
+                    aria-label="Copy code to clipboard"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <div class="code-content">
+                  <code>pip install -r backend/requirements.txt</code>
+                </div>
               </div>
             </div>
           </div>
@@ -103,14 +108,18 @@
               </p>
 
               <div class="code-block">
-                <button
-                  class="copy-btn"
-                  onclick="copyCode(this)"
-                  aria-label="Copy code to clipboard"
-                >
-                  Copy
-                </button>
-                <code>cd backend python qconfig.py</code>
+                <div class="code-header">
+                  <button
+                    class="copy-btn"
+                    onclick="copyCode(this)"
+                    aria-label="Copy code to clipboard"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <div class="code-content">
+                  <code>cd backend python qconfig.py</code>
+                </div>
               </div>
 
               <p>This launches an interactive menu where you can:</p>
@@ -140,14 +149,18 @@
               <p class="step-description">Start your QuickServe file server:</p>
 
               <div class="code-block">
-                <button
-                  class="copy-btn"
-                  onclick="copyCode(this)"
-                  aria-label="Copy code to clipboard"
-                >
-                  Copy
-                </button>
-                <code>python quickserve.py</code>
+                <div class="code-header">
+                  <button
+                    class="copy-btn"
+                    onclick="copyCode(this)"
+                    aria-label="Copy code to clipboard"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <div class="code-content">
+                  <code>python quickserve.py</code>
+                </div>
               </div>
 
               <p>
@@ -169,18 +182,14 @@
 
               <h3>Option 1: Use Official Frontend</h3>
               <p>
-                To use the official web interface at
-                <code>https://quickserve.noman.qzz.io</code>, you must allow it
-                as a CORS origin in your configuration:
+                To use the official web interface, you must allow it as a CORS
+                origin in your configuration:
               </p>
 
               <ol class="instruction-list">
                 <li>Run <code>python qconfig.py</code></li>
                 <li>Select "Manage CORS Origins"</li>
-                <li>
-                  Add <code>https://quickserve.noman.qzz.io</code> to allowed
-                  origins
-                </li>
+                <li>Select "Use Default (Recommended)".</li>
               </ol>
 
               <h3>Option 2: Self-Hosted Frontend</h3>
@@ -209,15 +218,19 @@
               </p>
 
               <div class="code-block">
-                <button
-                  class="copy-btn"
-                  onclick="copyCode(this)"
-                  aria-label="Copy code to clipboard"
-                >
-                  Copy
-                </button>
-                <code>Local: http://localhost:{port}</code>
-                <code>Network: http://{your-ip}:{port}</code>
+                <div class="code-header">
+                  <button
+                    class="copy-btn"
+                    onclick="copyCode(this)"
+                    aria-label="Copy code to clipboard"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <div class="code-content">
+                  <code>Local: http://localhost:{port}</code>
+                  <code>Network: http://{your-ip}:{port}</code>
+                </div>
               </div>
 
               <p>Use the web interface to login and manage files.</p>
@@ -266,8 +279,9 @@
       });
 
       function copyCode(button) {
-        const codeBlock = button.parentElement;
-        const code = codeBlock.querySelector("code").textContent;
+        const codeBlock = button.closest(".code-block");
+        const codeContent = codeBlock.querySelector(".code-content");
+        const code = codeContent.textContent;
 
         navigator.clipboard
           .writeText(code)

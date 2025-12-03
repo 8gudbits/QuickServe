@@ -4,3 +4,4 @@ pydantic
 pydantic-core
 python-multipart
 bcrypt
+PyJWT

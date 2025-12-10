@@ -118,6 +118,13 @@ class QuickServeClient {
     this.selectionMode = false;
     this.selectedFiles = new Set();
     this.zipSelectBtn = null;
+
+    this.currentSort = {
+      field: "name",
+      order: "asc",
+      foldersFirst: true,
+    };
+
     this.init();
   }
 
@@ -131,6 +138,7 @@ class QuickServeClient {
     this.setupEventListeners();
     this.setupContextMenu();
     this.setupZipSelection();
+    this.setupSorting();
   }
 
   async verifyToken() {
@@ -647,6 +655,8 @@ class QuickServeClient {
 
   getFileFromRow(row) {
     const nameCell = row.cells[0];
+    const dateCell = row.cells[1];
+    const sizeCell = row.cells[2];
     const link = nameCell.querySelector("a");
     const icon = link.querySelector("i");
     const name = Array.from(link.childNodes)
@@ -658,7 +668,29 @@ class QuickServeClient {
       name: name,
       path: this.getCurrentPath() ? `${this.getCurrentPath()}/${name}` : name,
       type: isFolder ? "folder" : "file",
+      date_modified: dateCell.textContent,
+      size: this.parseFileSize(sizeCell.textContent),
     };
+  }
+
+  parseFileSize(sizeString) {
+    if (!sizeString) return 0;
+
+    const units = {
+      B: 1,
+      KB: 1024,
+      MB: 1024 * 1024,
+      GB: 1024 * 1024 * 1024,
+    };
+
+    const match = sizeString.match(/^([\d.]+)\s*([A-Za-z]+)$/);
+    if (match) {
+      const value = parseFloat(match[1]);
+      const unit = match[2].toUpperCase();
+      return value * (units[unit] || 1);
+    }
+
+    return 0;
   }
 
   getCurrentPath() {
@@ -717,6 +749,7 @@ class QuickServeClient {
   updateUIWithPermissions() {
     const uploadLabel = document.getElementById("uploadLabel");
     const zipSelectBtn = document.getElementById("zipSelectBtn");
+    const sortBtn = document.getElementById("sortBtn");
 
     if (!this.userPermissions.can_upload) {
       uploadLabel.classList.add("disabled");
@@ -1037,6 +1070,13 @@ class QuickServeClient {
       this.hideLoading();
       this.updateNavigation(actualPath);
 
+      if (data.files.length > 0) {
+        setTimeout(() => {
+          this.sortFiles();
+          this.updateSortIndicators();
+        }, 150);
+      }
+
       if (this.selectionMode) {
         setTimeout(() => {
           this.addSelectionUI();
@@ -1199,6 +1239,13 @@ class QuickServeClient {
     this.hideLoading();
     this.updateNavigation(searchPath);
 
+    if (data.results.length > 0) {
+      setTimeout(() => {
+        this.sortFiles();
+        this.updateSortIndicators();
+      }, 150);
+    }
+
     setTimeout(() => {
       const clearSearchBtn = document.getElementById("clearSearch");
       if (clearSearchBtn) {
@@ -1293,6 +1340,233 @@ class QuickServeClient {
     const backBtn = document.getElementById("backBtn");
     const parentPath = this.getParentPath(currentPath);
     backBtn.disabled = !currentPath || currentPath === "";
+  }
+
+  setupSorting() {
+    this.sortBtn = document.getElementById("sortBtn");
+    this.sortModal = document.getElementById("sortModal");
+
+    this.sortBtn.addEventListener("click", () => {
+      this.showSortModal();
+    });
+
+    const sortOptions = document.querySelectorAll(".sort-option");
+    sortOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        sortOptions.forEach((opt) => {
+          opt.classList.remove("active");
+          opt.querySelector(".check-icon").style.display = "none";
+        });
+
+        option.classList.add("active");
+        option.querySelector(".check-icon").style.display = "inline-block";
+      });
+    });
+
+    document.getElementById("cancelSort").addEventListener("click", () => {
+      this.hideSortModal();
+    });
+
+    document.getElementById("applySort").addEventListener("click", () => {
+      this.applySorting();
+    });
+
+    this.sortModal.addEventListener("click", (e) => {
+      if (e.target.id === "sortModal") {
+        this.hideSortModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.key === "s") {
+        e.preventDefault();
+        this.showSortModal();
+      }
+      if (e.key === "Escape" && this.sortModal.style.display === "flex") {
+        this.hideSortModal();
+      }
+    });
+
+    this.loadSortPreferences();
+  }
+
+  showSortModal() {
+    const currentSortId = `${this.currentSort.field}-${this.currentSort.order}`;
+    const currentOption = document.querySelector(
+      `.sort-option[data-sort="${currentSortId}"]`
+    );
+
+    document.querySelectorAll(".sort-option").forEach((option) => {
+      option.classList.remove("active");
+      option.querySelector(".check-icon").style.display = "none";
+    });
+
+    if (currentOption) {
+      currentOption.classList.add("active");
+      currentOption.querySelector(".check-icon").style.display = "inline-block";
+    }
+
+    document.getElementById("foldersFirstToggle").checked =
+      this.currentSort.foldersFirst;
+
+    this.sortModal.style.display = "flex";
+  }
+
+  hideSortModal() {
+    this.sortModal.style.display = "none";
+  }
+
+  applySorting() {
+    const selectedOption = document.querySelector(".sort-option.active");
+    if (!selectedOption) {
+      this.showError("Please select a sort option");
+      return;
+    }
+
+    const sortType = selectedOption.getAttribute("data-sort");
+    const [field, order] = sortType.split("-");
+    const foldersFirst = document.getElementById("foldersFirstToggle").checked;
+
+    this.currentSort = {
+      field,
+      order,
+      foldersFirst,
+    };
+
+    this.saveSortPreferences();
+    this.sortFiles();
+    this.updateSortIndicators();
+    this.hideSortModal();
+    this.showSuccess(`Sorted by ${this.getSortDisplayName(field, order)}`);
+  }
+
+  getSortDisplayName(field, order) {
+    const fieldNames = {
+      name: "Name",
+      date: "Date",
+      type: "Type",
+      size: "Size",
+    };
+
+    const orderNames = {
+      asc: "Ascending",
+      desc: "Descending",
+    };
+
+    return `${fieldNames[field]} (${orderNames[order]})`;
+  }
+
+  sortFiles() {
+    const filesTableBody = document.getElementById("filesTableBody");
+    const rows = Array.from(filesTableBody.querySelectorAll("tr.file-item"));
+
+    if (rows.length === 0) return;
+
+    const filesData = rows.map((row) => this.getFileFromRow(row));
+
+    const sortedFiles = filesData.sort((a, b) => {
+      if (this.currentSort.foldersFirst) {
+        if (a.type === "folder" && b.type !== "folder") return -1;
+        if (a.type !== "folder" && b.type === "folder") return 1;
+      }
+
+      let compareResult = 0;
+
+      switch (this.currentSort.field) {
+        case "name":
+          compareResult = a.name.localeCompare(b.name);
+          break;
+
+        case "date":
+          const dateA = new Date(a.date_modified || 0);
+          const dateB = new Date(b.date_modified || 0);
+          compareResult = dateA - dateB;
+          break;
+
+        case "type":
+          const typeA = this.getFileType(a.name);
+          const typeB = this.getFileType(b.name);
+          compareResult = typeA.localeCompare(typeB);
+          break;
+
+        case "size":
+          compareResult = (a.size || 0) - (b.size || 0);
+          break;
+      }
+
+      return this.currentSort.order === "desc" ? -compareResult : compareResult;
+    });
+
+    filesTableBody.innerHTML = "";
+    sortedFiles.forEach((fileData) => {
+      const originalRow = rows.find((row) => {
+        const rowFile = this.getFileFromRow(row);
+        return rowFile.path === fileData.path;
+      });
+
+      if (originalRow) {
+        filesTableBody.appendChild(originalRow);
+      }
+    });
+  }
+
+  getFileType(filename) {
+    const parts = filename.split(".");
+    if (parts.length > 1) {
+      return parts.pop().toLowerCase();
+    }
+    return "folder";
+  }
+
+  updateSortIndicators() {
+    document.querySelectorAll(".sort-indicator").forEach((indicator) => {
+      indicator.remove();
+    });
+
+    const headers = document.querySelectorAll("th");
+    let headerIndex = -1;
+
+    switch (this.currentSort.field) {
+      case "name":
+        headerIndex = 0;
+        break;
+      case "date":
+        headerIndex = 1;
+        break;
+      case "size":
+        headerIndex = 2;
+        break;
+    }
+
+    if (headerIndex >= 0 && headers[headerIndex]) {
+      const indicator = document.createElement("span");
+      indicator.className = "sort-indicator";
+      indicator.innerHTML = this.currentSort.order === "asc" ? "↑" : "↓";
+      indicator.style.color = "var(--accent-3)";
+      headers[headerIndex].appendChild(indicator);
+    }
+  }
+
+  saveSortPreferences() {
+    localStorage.setItem(
+      "quickserve_sort_prefs",
+      JSON.stringify(this.currentSort)
+    );
+  }
+
+  loadSortPreferences() {
+    const saved = localStorage.getItem("quickserve_sort_prefs");
+    if (saved) {
+      try {
+        this.currentSort = JSON.parse(saved);
+      } catch (e) {
+        this.currentSort = {
+          field: "name",
+          order: "asc",
+          foldersFirst: true,
+        };
+      }
+    }
   }
 
   setupSearch() {

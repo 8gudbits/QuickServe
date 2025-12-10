@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 
 
 APPNAME = "QuickServe API"
-VERSION = "4.0.0-rc1"
+VERSION = "4.1.0"
 
 JWT_SECRET = secrets.token_urlsafe(64)
 JWT_ALGORITHM = "HS256"

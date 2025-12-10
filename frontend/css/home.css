@@ -681,6 +681,127 @@ td a:hover {
     text-align: center;
 }
 
+.sort-modal-content {
+    max-width: 450px;
+    width: 95%;
+}
+
+.sort-options {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.sort-option-group {
+    margin-bottom: 20px;
+}
+
+.sort-option-group h4 {
+    margin-bottom: 10px;
+    color: var(--accent-1);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.sort-option {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 5px;
+    border: 1px solid var(--border-primary);
+    background: var(--background-info);
+}
+
+.sort-option:hover {
+    background: var(--background-hover);
+    transform: translateX(5px);
+}
+
+.sort-option.active {
+    background: var(--state-selected);
+    border-color: var(--accent-1);
+}
+
+.sort-option i:first-child {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+    color: var(--accent-1);
+}
+
+.sort-option span {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.check-icon {
+    color: var(--success);
+    font-size: 0.9rem;
+}
+
+.sort-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-radius: 8px;
+    background: var(--background-info);
+    border: 1px solid var(--border-primary);
+}
+
+.sort-toggle span {
+    font-size: 0.9rem;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--accent-3);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--success);
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
 .modal-title {
     font-size: 1.2rem;
     font-weight: 600;
@@ -694,6 +815,10 @@ td a:hover {
 
 .modal-title i {
     color: var(--error);
+}
+
+.sort-modal-content .modal-title i {
+    color: var(--accent-1);
 }
 
 .modal-message {
@@ -734,6 +859,15 @@ td a:hover {
 
 .modal-btn-delete:hover {
     background: var(--button-error-hover);
+}
+
+.modal-btn-primary {
+    background: var(--success);
+    color: var(--text-inverse);
+}
+
+.modal-btn-primary:hover {
+    background: var(--button-success-hover);
 }
 
 .selection-mode .file-item {
@@ -895,6 +1029,11 @@ td a:hover {
     margin-left: auto;
 }
 
+.sort-indicator {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
 @media (max-width: 768px) {
     .selection-controls-row {
         padding: 10px 12px;
@@ -939,7 +1078,8 @@ td a:hover {
     .nav-buttons-row .btn,
     .search-input-row .btn,
     #uploadLabel,
-    #executeSearch {
+    #executeSearch,
+    #sortBtn {
         width: 44px !important;
         padding: 0 !important;
         justify-content: center;
@@ -1047,6 +1187,19 @@ td a:hover {
     .toast {
         padding: 10px 14px;
     }
+
+    .sort-modal-content {
+        max-width: 95%;
+        padding: 15px;
+    }
+
+    .sort-options {
+        max-height: 300px;
+    }
+
+    .sort-option {
+        padding: 10px 12px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1110,6 +1263,11 @@ td a:hover {
         height: 28px;
         padding: 6px;
     }
+
+    .sort-modal-content {
+        max-width: 95%;
+        padding: 12px;
+    }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
@@ -1159,6 +1317,10 @@ td a:hover {
     .zip-action-btn:hover:not(:disabled) {
         transform: none;
         box-shadow: none;
+    }
+
+    .sort-option:hover {
+        transform: none;
     }
 }
 

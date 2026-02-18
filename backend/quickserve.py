@@ -12,7 +12,9 @@ import zipfile
 import mimetypes
 import io
 import uvicorn
+import logging
 
+from pathlib import Path
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Query, Request, Depends
@@ -22,11 +24,61 @@ from datetime import datetime, timedelta, timezone
 
 
 APPNAME = "QuickServe API"
-VERSION = "4.0.0-rc1"
+VERSION = "4.1.0"
 
 JWT_SECRET = secrets.token_urlsafe(64)
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24
+
+
+class Logger:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+
+        if getattr(sys, "frozen", False):
+            base_dir = os.path.dirname(sys.executable)
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        logs_dir = Path(base_dir) / "logs"
+        logs_dir.mkdir(exist_ok=True)
+
+        self.logger = logging.getLogger("quickserve")
+        self.logger.setLevel(logging.INFO)
+        self.logger.handlers.clear()
+
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+        info_handler = logging.FileHandler(logs_dir / "server.log")
+        info_handler.setLevel(logging.INFO)
+        info_handler.setFormatter(formatter)
+
+        error_handler = logging.FileHandler(logs_dir / "error.log")
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(formatter)
+
+        self.logger.addHandler(info_handler)
+        self.logger.addHandler(error_handler)
+
+        self._initialized = True
+
+    def info(self, message: str):
+        self.logger.info(message)
+
+    def error(self, message: str):
+        self.logger.error(message)
+
+    def warning(self, message: str):
+        self.logger.warning(message)
 
 
 class BruteForceProtection:
@@ -96,15 +148,18 @@ class BruteForceProtection:
 class ServerConfig:
     def __init__(self, config_file: str):
         self.config_file = config_file
+        self.logger = Logger()
         self.load_config()
 
     def load_config(self):
         if not os.path.exists(self.config_file):
+            self.logger.error("Configuration file not found")
             raise SystemExit("Configuration file not found. Please run qconfig first.")
         try:
             with open(self.config_file, "r") as file:
                 self.config = json.load(file)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Invalid configuration in config.json: {e}")
             raise SystemExit("Invalid configuration in config.json")
 
     @property
@@ -179,6 +234,7 @@ class FileSystemService:
         self.server_root = server_root
         self.use_recycle_bin = use_recycle_bin
         self.start_time = time.time()
+        self.logger = Logger()
 
     def get_uptime(self) -> str:
         minutes = int((time.time() - self.start_time) / 60)
@@ -271,7 +327,7 @@ class FileSystemService:
             shutil.move(absolute_path, destination)
             return True
         except Exception as e:
-            print(f"Error moving to recycle bin: {e}")
+            self.logger.error(f"Error moving to recycle bin: {e}")
             return False
 
     def get_files_in_directory(self, clean_path: str) -> List[FileEntry]:
@@ -313,6 +369,9 @@ class FileSystemService:
                     )
         except ValueError:
             return []
+        except Exception as e:
+            self.logger.error(f"Error listing directory {clean_path}: {e}")
+            return []
         return folders + files
 
     def search_files(self, search_path: str, pattern: str) -> List[Dict]:
@@ -351,6 +410,9 @@ class FileSystemService:
                             continue
         except ValueError:
             return []
+        except Exception as e:
+            self.logger.error(f"Search error: {e}")
+            return []
         return sorted(results, key=lambda x: x["name"].lower())
 
 
@@ -369,12 +431,12 @@ class AuthenticationService:
         is_locked, lock_message = self.brute_force.is_locked(username)
         if is_locked:
             return False, lock_message, None
-        
+
         users = self.config.users
         if username not in users:
             needs_cooldown, cooldown_message = self.brute_force.record_failed_attempt(username)
             return False, cooldown_message if needs_cooldown else "Invalid credentials", None
-        
+
         user_data = users[username]
         if isinstance(user_data, dict):
             stored_hash = user_data.get("password", "")
@@ -445,13 +507,13 @@ async def get_current_user(request: Request) -> Dict:
         payload = verify_jwt_token(token)
         if payload:
             return payload
-    
+
     token = request.query_params.get("token")
     if token:
         payload = verify_jwt_token(token)
         if payload:
             return payload
-    
+
     raise HTTPException(status_code=401, detail="Not authenticated")
 
 
@@ -464,6 +526,7 @@ class QuickServe:
             self.SERVER_ROOT, self.config.use_recycle_bin
         )
         self.app = FastAPI(title=APPNAME, version=VERSION)
+        self.logger = Logger()
         self._setup_cors()
         self._setup_routes()
         self._setup_exception_handlers()
@@ -488,7 +551,7 @@ class QuickServe:
     def _setup_exception_handlers(self):
         @self.app.exception_handler(500)
         async def internal_server_error_handler(request: Request, exc: Exception):
-            print(f"Internal server error: {exc}")
+            self.logger.error(f"Internal server error: {exc}")
             return JSONResponse(
                 status_code=500,
                 content={"detail": "Internal server error"}
@@ -512,20 +575,24 @@ class QuickServe:
             authenticated, message, permissions = self.auth_service.authenticate_user(
                 login_data.username, login_data.password
             )
-            
+
             if not authenticated:
+                self.logger.error(f"Failed login attempt for user: {login_data.username}")
                 raise HTTPException(status_code=401, detail=message)
-            
+
             token = create_jwt_token(login_data.username, permissions)
-            
+            self.logger.info(f"Login successful: {login_data.username}")
+
             return {
                 "status": "success",
                 "message": "Login successful",
                 "token": token,
                 "permissions": permissions.model_dump(),
             }
+        except HTTPException:
+            raise
         except Exception as e:
-            print(f"Login error: {e}")
+            self.logger.error(f"Login system error for {login_data.username}: {e}")
             raise HTTPException(status_code=500, detail="Authentication failed")
 
     async def verify_token(self, user: Dict = Depends(get_current_user)):
@@ -549,12 +616,13 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"List files error: {e}")
+            self.logger.error(f"Error listing files: {e}")
             raise HTTPException(status_code=500, detail="Failed to load directory contents")
 
     async def download_file(self, path: str = Query(...), user: Dict = Depends(get_current_user)):
         permissions = UserPermissions(**user["permissions"])
         if not permissions.can_download:
+            self.logger.warning(f"Download denied for {user['username']}: {path}")
             raise HTTPException(status_code=403, detail="Download not permitted")
         try:
             clean_path = self.fs_service.clean_path(path)
@@ -562,6 +630,7 @@ class QuickServe:
             if not os.path.exists(absolute_path) or not os.path.isfile(absolute_path):
                 raise HTTPException(status_code=404, detail="File not found")
             filename = os.path.basename(absolute_path)
+            self.logger.info(f"File downloaded: {path} by {user['username']}")
             return FileResponse(
                 absolute_path, 
                 media_type="application/octet-stream", 
@@ -573,12 +642,13 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"Download error: {e}")
+            self.logger.error(f"Download error: {e}")
             raise HTTPException(status_code=500, detail="Download failed")
 
     async def download_zip(self, paths: List[str] = Query(...), user: Dict = Depends(get_current_user)):
         permissions = UserPermissions(**user["permissions"])
         if not permissions.can_download:
+            self.logger.warning(f"Zip download denied for {user['username']}")
             raise HTTPException(status_code=403, detail="Download not permitted")
 
         try:
@@ -622,6 +692,7 @@ class QuickServe:
                 memory_file.seek(0)
                 return memory_file
 
+            self.logger.info(f"Zip download: {len(paths)} files by {user['username']}")
             return StreamingResponse(
                 generate_zip(),
                 media_type="application/zip",
@@ -630,12 +701,13 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"Download zip error: {e}")
+            self.logger.error(f"Zip download error: {e}")
             raise HTTPException(status_code=500, detail="Download failed")
 
     async def preview_file(self, path: str = Query(...), user: Dict = Depends(get_current_user)):
         permissions = UserPermissions(**user["permissions"])
         if not permissions.can_see_preview:
+            self.logger.warning(f"Preview denied for {user['username']}: {path}")
             raise HTTPException(status_code=403, detail="Preview not permitted")
         try:
             clean_path = self.fs_service.clean_path(path)
@@ -643,6 +715,7 @@ class QuickServe:
             if not os.path.exists(absolute_path) or not os.path.isfile(absolute_path):
                 raise HTTPException(status_code=404, detail="File not found")
             filename = os.path.basename(absolute_path)
+            self.logger.info(f"File previewed: {path} by {user['username']}")
             media_type, _ = mimetypes.guess_type(filename)
             if media_type is None:
                 media_type = "application/octet-stream"
@@ -655,12 +728,13 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"Preview error: {e}")
+            self.logger.error(f"Preview error: {e}")
             raise HTTPException(status_code=500, detail="Preview failed")
 
     async def upload_file(self, path: str = Form(...), file: UploadFile = File(...), user: Dict = Depends(get_current_user)):
         permissions = UserPermissions(**user["permissions"])
         if not permissions.can_upload:
+            self.logger.warning(f"Upload denied for {user['username']}")
             raise HTTPException(status_code=403, detail="Upload not permitted")
         try:
             clean_path = self.fs_service.clean_path(path)
@@ -678,8 +752,9 @@ class QuickServe:
                 contents = await file.read()
                 with open(file_path, "wb") as f:
                     f.write(contents)
+                self.logger.info(f"File uploaded: {file.filename} to {path} by {user['username']}")
             except Exception as e:
-                print(f"File write error: {e}")
+                self.logger.error(f"File upload write error: {e}")
                 raise HTTPException(status_code=500, detail="Upload failed")
             return {
                 "status": "success",
@@ -689,12 +764,13 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"Upload error: {e}")
+            self.logger.error(f"Upload error: {e}")
             raise HTTPException(status_code=500, detail="Upload failed")
 
     async def delete_file(self, path: str = Form(...), user: Dict = Depends(get_current_user)):
         permissions = UserPermissions(**user["permissions"])
         if not permissions.can_delete:
+            self.logger.warning(f"Delete denied for {user['username']}: {path}")
             raise HTTPException(status_code=403, detail="Delete not permitted")
         try:
             clean_path = self.fs_service.clean_path(path)
@@ -706,6 +782,7 @@ class QuickServe:
                 if self.config.use_recycle_bin:
                     moved = self.fs_service.move_to_recycle_bin(absolute_path)
                     if moved:
+                        self.logger.info(f"File deleted (recycle bin): {path} by {user['username']}")
                         return {
                             "status": "success",
                             "message": "File deleted successfully",
@@ -714,15 +791,17 @@ class QuickServe:
                         raise HTTPException(status_code=500, detail="Unable to delete file")
                 else:
                     os.remove(absolute_path)
+                    self.logger.info(f"File permanently deleted: {path} by {user['username']}")
                     return {
                         "status": "success", 
                         "message": "File deleted successfully"
                     }
-            
+
             elif os.path.isdir(absolute_path):
                 if self.config.use_recycle_bin:
                     moved = self.fs_service.move_to_recycle_bin(absolute_path)
                     if moved:
+                        self.logger.info(f"Directory deleted (recycle bin): {path} by {user['username']}")
                         return {
                             "status": "success",
                             "message": "Directory deleted successfully",
@@ -731,17 +810,18 @@ class QuickServe:
                         raise HTTPException(status_code=500, detail="Unable to delete directory")
                 else:
                     shutil.rmtree(absolute_path)
+                    self.logger.info(f"Directory permanently deleted: {path} by {user['username']}")
                     return {
                         "status": "success",
                         "message": "Directory deleted successfully",
                     }
-            
+
             else:
                 raise HTTPException(status_code=400, detail="Path is not a file or directory")
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"Delete error: {e}")
+            self.logger.error(f"Delete error: {e}")
             raise HTTPException(status_code=500, detail="Delete failed")
 
     async def health_check(self):
@@ -762,7 +842,7 @@ class QuickServe:
                 },
             )
         except Exception as e:
-            print(f"Health check error: {e}")
+            self.logger.error(f"Health check error: {e}")
             raise HTTPException(status_code=500, detail="Service unavailable")
 
     async def get_config(self):
@@ -775,7 +855,7 @@ class QuickServe:
                 "brute_force_protection": self.config.brute_force_protection,
             }
         except Exception as e:
-            print(f"Config error: {e}")
+            self.logger.error(f"Config error: {e}")
             raise HTTPException(status_code=500, detail="Configuration unavailable")
 
     async def search_files_route(self, path: str = Query(""), pattern: str = Query(""), user: Dict = Depends(get_current_user)):
@@ -793,7 +873,7 @@ class QuickServe:
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
         except Exception as e:
-            print(f"Search error: {e}")
+            self.logger.error(f"Search error: {e}")
             raise HTTPException(status_code=500, detail="Search failed")
 
     def _get_terminal_width(self):
@@ -836,6 +916,11 @@ class QuickServe:
             print(f"  Note:          Server restart clears all locks")
 
         print("-" * width)
+        print(f"LOGGING:         Logs stored in '{os.path.join(self.current_directory, 'logs')}' folder")
+        print("                 - server.log (all logs)")
+        print("                 - error.log (error logs)")
+
+        print("-" * width)
         print("ACCESS URLs:")
         print(f"Local:           http://localhost:{self.config.port}")
         print(f"Network:         http://0.0.0.0:{self.config.port}")
@@ -848,6 +933,9 @@ class QuickServe:
         print("Use the Local URL for access from this machine")
         print("Use the Local Network URL for access from other devices on the same network")
         print("=" * width)
+
+        self.logger.info(f"QuickServe API v{VERSION} started on port {self.config.port}")
+        self.logger.info(f"Server root: {self.fs_service.server_root}")
 
         log_config = {
             "version": 1,
@@ -875,6 +963,7 @@ if __name__ == "__main__":
         print(f"Error: {e}")
         sys.exit(1)
     except Exception as e:
+        Logger().error(f"Server startup error: {e}")
         print(f"Unexpected error: {e}")
         sys.exit(1)
 

@@ -62,6 +62,13 @@
               </button>
             </div>
           </div>
+          <button
+            class="btn btn-secondary"
+            id="sortBtn"
+            aria-label="Sort Files"
+          >
+            <i class="fas fa-sort"></i> <span>Sort</span>
+          </button>
           <label
             for="file-input"
             class="btn btn-secondary"
@@ -168,6 +175,78 @@
           </button>
           <button class="modal-btn modal-btn-delete" id="confirmDelete">
             Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="sortModal">
+      <div class="modal-content sort-modal-content">
+        <div class="modal-title">
+          <i class="fas fa-sort-amount-down"></i>
+          <span>Sort Files</span>
+        </div>
+        <div class="sort-options">
+          <div class="sort-option-group">
+            <h4>Sort by:</h4>
+            <div class="sort-option" data-sort="name-asc">
+              <i class="fas fa-font"></i>
+              <span>Name (A to Z)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="name-desc">
+              <i class="fas fa-font"></i>
+              <span>Name (Z to A)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="date-asc">
+              <i class="fas fa-calendar"></i>
+              <span>Date (Oldest first)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="date-desc">
+              <i class="fas fa-calendar"></i>
+              <span>Date (Newest first)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="type-asc">
+              <i class="fas fa-file"></i>
+              <span>Type (A to Z)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="type-desc">
+              <i class="fas fa-file"></i>
+              <span>Type (Z to A)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="size-asc">
+              <i class="fas fa-weight-hanging"></i>
+              <span>Size (Smallest first)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+            <div class="sort-option" data-sort="size-desc">
+              <i class="fas fa-weight-hanging"></i>
+              <span>Size (Largest first)</span>
+              <i class="fas fa-check check-icon" style="display: none"></i>
+            </div>
+          </div>
+          <div class="sort-option-group">
+            <h4>Folders first:</h4>
+            <div class="sort-toggle">
+              <span>Always keep folders at top</span>
+              <label class="switch">
+                <input type="checkbox" id="foldersFirstToggle" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" id="cancelSort">
+            Cancel
+          </button>
+          <button class="modal-btn modal-btn-primary" id="applySort">
+            Apply Sort
           </button>
         </div>
       </div>

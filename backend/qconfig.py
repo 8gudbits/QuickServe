@@ -191,7 +191,7 @@ class QuickServeConfig:
         print("Authentication requires specific frontend URLs.")
         if input("Use default frontend URLs? (Y/n): ").strip().lower() in ["", "y", "yes"]:
             default_origins = [
-                "https://quickserve.noman.qzz.io",
+                "https://quickserve.8gudbits.qzz.io",
                 "https://8gudbits.github.io",
             ]
             self.config["allow_origins"] = default_origins
@@ -615,7 +615,7 @@ class QuickServeConfig:
         print("• Wildcard '*' origins are BLOCKED by browsers")
         print("• You must specify exact frontend URLs\n")
         print("Recommended: Use 'Use Default' option which includes:")
-        print("• https://quickserve.noman.qzz.io")
+        print("• https://quickserve.8gudbits.qzz.io")
         print("• https://8gudbits.github.io")
         print("\nIf hosting your own frontend, add your exact website URL.")
         input("\nPress Enter to continue...")
@@ -625,7 +625,7 @@ class QuickServeConfig:
         self.show_banner()
         print("\nSETTING DEFAULT ORIGINS\n")
         default_origins = [
-            "https://quickserve.noman.qzz.io",
+            "https://quickserve.8gudbits.qzz.io",
             "https://8gudbits.github.io",
         ]
 

@@ -2,7 +2,7 @@
 
 A lightweight, self-hosted file server with web interface for easy file sharing and management.
 
-Learn more at: [https://quickserve.noman.qzz.io/](https://8gudbits.github.io/quickserve.noman)
+Learn more at: [https://quickserve.8gudbits.qzz.io/](https://8gudbits.github.io/quickserve.8gudbits)
 
 ![](preview/index.png)
 
@@ -50,11 +50,11 @@ The server will start and display access URLs for both local computer and networ
 
 ### Using Official Frontend
 
-To use the official web interface at `https://quickserve.noman.qzz.io`, you must allow it as a CORS origin in your configuration:
+To use the official web interface at `https://quickserve.8gudbits.qzz.io`, you must allow it as a CORS origin in your configuration:
 
 1. Run python `qconfig.py`
 2. Select "Manage CORS Origins"
-3. Add `https://quickserve.noman.qzz.io` to allowed origins
+3. Add `https://quickserve.8gudbits.qzz.io` to allowed origins
 
 ### Self-Hosted Frontend
 
@@ -75,7 +75,7 @@ Alternatively, you can host the frontend files yourself:
 ## Security Notes
 
 - CORS origins should be properly configured for use
-- Default configuration allows only [official login portal](https://8gudbits.github.io/quickserve.noman/login)
+- Default configuration allows only [official login portal](https://8gudbits.github.io/quickserve.8gudbits/login)
 
 ## Access
 

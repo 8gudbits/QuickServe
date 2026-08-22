@@ -1,5 +1,6 @@
 # v4.2.0
 
+- Renamed config tool from qconfig to quickconfig
 - Added ability to upload multiple files at once
 - Added drag and drop to upload files
 - Added total upload size limiter

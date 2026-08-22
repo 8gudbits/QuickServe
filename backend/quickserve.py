@@ -154,7 +154,7 @@ class ServerConfig:
     def load_config(self):
         if not os.path.exists(self.config_file):
             self.logger.error("Configuration file not found")
-            raise SystemExit("Configuration file not found. Please run qconfig first.")
+            raise SystemExit("Configuration file not found. Please run quickconfig first.")
         try:
             with open(self.config_file, "r") as file:
                 self.config = json.load(file)

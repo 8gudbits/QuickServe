@@ -125,11 +125,15 @@ class QuickServeClient {
       foldersFirst: true,
     };
 
+    this.maxFileSizeMB = 0;
+    this.maxTotalUploadSizeMB = 0;
+
     this.init();
   }
 
   async init() {
     await this.verifyToken();
+    await this.loadServerConfig();
     this.updateServerInfo();
     this.updateUIWithPermissions();
 
@@ -139,6 +143,26 @@ class QuickServeClient {
     this.setupContextMenu();
     this.setupZipSelection();
     this.setupSorting();
+    this.setupDragAndDrop();
+  }
+
+  async loadServerConfig() {
+    try {
+      const response = await fetch(`${this.serverUrl}/api/config`, {
+        method: "GET",
+        headers: this.getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const config = await response.json();
+        this.maxFileSizeMB = config.max_file_size_mb || 0;
+        this.maxTotalUploadSizeMB = config.max_total_upload_size_mb || 0;
+      }
+    } catch (error) {
+      console.warn("Could not load server config:", error);
+      this.maxFileSizeMB = 0;
+      this.maxTotalUploadSizeMB = 0;
+    }
   }
 
   async verifyToken() {
@@ -1096,34 +1120,127 @@ class QuickServeClient {
       return;
     }
 
+    if (this.maxFileSizeMB > 0) {
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > this.maxFileSizeMB) {
+        this.showError(
+          `File too large. Maximum file size is ${this.maxFileSizeMB} MB (your file: ${fileSizeMB.toFixed(1)} MB)`
+        );
+        return;
+      }
+    }
+
     const currentPath = this.getPathFromURL();
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("path", currentPath);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch(`${this.serverUrl}/api/upload`, {
+      const url = `${this.serverUrl}/api/upload?path=${encodeURIComponent(currentPath)}`;
+      const response = await fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.token}`,
+          Authorization: `Bearer ${this.token}`
         },
         body: formData,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        const result = await response.json();
-
         this.showSuccess("File uploaded successfully!");
-
         setTimeout(() => {
           this.loadFiles(currentPath);
         }, 100);
       } else {
-        throw new Error("Upload failed");
+        let errorMessage = `Upload failed (${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+        } catch {
+          errorMessage = await response.text() || errorMessage;
+        }
+        this.showError(errorMessage);
       }
     } catch (error) {
-      this.showError("Upload failed");
+      if (error.name === "AbortError") {
+        this.showError("Upload timed out – the server took too long to respond");
+      } else {
+        this.showError(`Upload failed: ${error.message || "Unknown error"}`);
+      }
     }
+  }
+
+  setupDragAndDrop() {
+    const dropOverlay = document.getElementById("dropOverlay");
+
+    // Helper to show/hide overlay
+    const showDropOverlay = (show) => {
+      if (show) {
+        dropOverlay.style.display = "flex";
+        dropOverlay.classList.add("show");
+      } else {
+        dropOverlay.style.display = "none";
+        dropOverlay.classList.remove("show");
+      }
+    };
+
+    // Global drag events
+    let dragCounter = 0;
+
+    document.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      dragCounter++;
+      // Only show if files are being dragged (check dataTransfer)
+      if (e.dataTransfer && e.dataTransfer.types) {
+        if (e.dataTransfer.types.includes("Files")) {
+          showDropOverlay(true);
+        }
+      }
+    });
+
+    document.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = "copy";
+      }
+      // Keep overlay visible
+      showDropOverlay(true);
+    });
+
+    document.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        showDropOverlay(false);
+      }
+    });
+
+    document.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      showDropOverlay(false);
+
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        // Upload each file (could be multiple)
+        for (let i = 0; i < files.length; i++) {
+          // Call uploadFile for each; they will run concurrently
+          this.uploadFile(files[i]);
+        }
+      }
+    });
+
+    // Also hide if user presses Escape
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        showDropOverlay(false);
+        dragCounter = 0;
+      }
+    });
   }
 
   async searchFiles(pattern) {
@@ -1286,7 +1403,15 @@ class QuickServeClient {
   }
 
   showError(message) {
-    this.showToast(message, "error");
+    let displayMessage = message;
+    if (typeof message === 'object') {
+      try {
+        displayMessage = JSON.stringify(message);
+      } catch {
+        displayMessage = String(message);
+      }
+    }
+    this.showToast(displayMessage, "error");
   }
 
   showSuccess(message) {
@@ -1617,9 +1742,11 @@ class QuickServeClient {
     const uploadLabel = document.getElementById("uploadLabel");
 
     fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (file) {
-        this.uploadFile(file);
+      const files = fileInput.files;
+      if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          this.uploadFile(files[i]);
+        }
         fileInput.value = "";
       }
     });

@@ -1378,3 +1378,77 @@ input:checked+.slider:before {
     border-color: var(--border-primary);
 }
 
+.drop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(90, 61, 104, 0.20);
+    backdrop-filter: blur(2px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    animation: dropFadeIn 0.25s ease-out;
+}
+
+.drop-overlay.show {
+    display: flex;
+}
+
+.drop-content {
+    text-align: center;
+    color: #2d2a2d;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 30px 50px;
+    border-radius: 20px;
+    border: 2px dashed rgba(90, 61, 104, 0.4);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.15);
+    max-width: 90%;
+}
+
+.drop-content i {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 3.5rem;
+    color: var(--accent-1);
+    opacity: 0.7;
+}
+
+.drop-content p {
+    font-size: 1.4rem;
+    font-weight: 500;
+    font-family: var(--font-display);
+    margin: 0;
+    letter-spacing: 0.02em;
+    color: var(--accent-1);
+}
+
+@keyframes dropFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 600px) {
+    .drop-content {
+        padding: 20px 24px;
+    }
+
+    .drop-content i {
+        font-size: 2.8rem;
+    }
+
+    .drop-content p {
+        font-size: 1.1rem;
+    }
+}
+

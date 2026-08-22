@@ -24,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 
 
 APPNAME = "QuickServe API"
-VERSION = "4.1.0"
+VERSION = "4.2.0"
 
 JWT_SECRET = secrets.token_urlsafe(64)
 JWT_ALGORITHM = "HS256"
@@ -175,6 +175,18 @@ class ServerConfig:
         return self.config.get("use_recycle_bin", True)
 
     @property
+    def serve_path(self) -> str:
+        return self.config.get("serve_path", ".")
+
+    @property
+    def max_file_size_mb(self) -> int:
+        return self.config.get("max_file_size_mb", 0)
+
+    @property
+    def max_total_upload_size_mb(self) -> int:
+        return self.config.get("max_total_upload_size_mb", 0)
+
+    @property
     def users(self) -> Dict:
         return self.config.get("users", {})
 
@@ -231,7 +243,7 @@ class UserPermissions(BaseModel):
 
 class FileSystemService:
     def __init__(self, server_root: str, use_recycle_bin: bool):
-        self.server_root = server_root
+        self.server_root = os.path.normpath(server_root)
         self.use_recycle_bin = use_recycle_bin
         self.start_time = time.time()
         self.logger = Logger()
@@ -261,7 +273,7 @@ class FileSystemService:
     def get_absolute_path(self, clean_path: str) -> str:
         if not clean_path:
             return self.server_root
-        absolute_path = os.path.join(self.server_root, clean_path)
+        absolute_path = os.path.join(self.server_root, clean_path.replace("/", os.sep))
         absolute_path = os.path.normpath(absolute_path)
         if not absolute_path.startswith(self.server_root):
             raise ValueError("Invalid path")
@@ -537,7 +549,20 @@ class QuickServe:
         else:
             self.current_directory = os.path.dirname(os.path.abspath(__file__))
         self.config_file = os.path.join(self.current_directory, "config.json")
-        self.SERVER_ROOT = os.getcwd()
+
+        try:
+            if os.path.exists(self.config_file):
+                with open(self.config_file, "r") as f:
+                    config_data = json.load(f)
+                    serve_path = config_data.get("serve_path", ".")
+                    self.SERVER_ROOT = os.path.normpath(os.path.join(self.current_directory, serve_path))
+                    if not os.path.exists(self.SERVER_ROOT):
+                        self.logger.warning(f"Serve path '{serve_path}' does not exist, using current directory")
+                        self.SERVER_ROOT = os.getcwd()
+            else:
+                self.SERVER_ROOT = os.getcwd()
+        except Exception:
+            self.SERVER_ROOT = os.getcwd()
 
     def _setup_cors(self):
         self.app.add_middleware(
@@ -731,16 +756,62 @@ class QuickServe:
             self.logger.error(f"Preview error: {e}")
             raise HTTPException(status_code=500, detail="Preview failed")
 
-    async def upload_file(self, path: str = Form(...), file: UploadFile = File(...), user: Dict = Depends(get_current_user)):
+    async def upload_file(
+        self,
+        path: str = Query(...),
+        file: UploadFile = File(...),
+        user: Dict = Depends(get_current_user)
+    ):
         permissions = UserPermissions(**user["permissions"])
         if not permissions.can_upload:
             self.logger.warning(f"Upload denied for {user['username']}")
             raise HTTPException(status_code=403, detail="Upload not permitted")
+
+        max_file_mb = self.config.max_file_size_mb
+        if max_file_mb > 0:
+            max_file_bytes = max_file_mb * 1024 * 1024
+            try:
+                file.file.seek(0, 2)
+                file_size = file.file.tell()
+                file.file.seek(0)
+                if file_size > max_file_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File too large. Maximum file size is {max_file_mb} MB"
+                    )
+            except Exception as e:
+                self.logger.error(f"Error checking file size: {e}")
+
+        max_total_mb = self.config.max_total_upload_size_mb
+        if max_total_mb > 0:
+            try:
+                clean_path = self.fs_service.clean_path(path)
+                absolute_path = self.fs_service.get_absolute_path(clean_path)
+                if os.path.exists(absolute_path) and os.path.isdir(absolute_path):
+                    current_total_bytes = self.fs_service.get_folder_size(absolute_path)
+                    current_total_mb = current_total_bytes / (1024 * 1024)
+
+                    file.file.seek(0, 2)
+                    file_size_bytes = file.file.tell()
+                    file.file.seek(0)
+                    file_size_mb = file_size_bytes / (1024 * 1024)
+
+                    if current_total_mb + file_size_mb > max_total_mb:
+                        raise HTTPException(
+                            status_code=413,
+                            detail=f"Total upload limit exceeded. Maximum total upload size is {max_total_mb} MB (current total: {current_total_mb:.1f} MB)"
+                        )
+            except HTTPException:
+                raise
+            except Exception as e:
+                self.logger.error(f"Error checking total upload size: {e}")
+
         try:
             clean_path = self.fs_service.clean_path(path)
             absolute_path = self.fs_service.get_absolute_path(clean_path)
             if not os.path.exists(absolute_path) or not os.path.isdir(absolute_path):
                 raise HTTPException(status_code=404, detail="Directory not found")
+
             file_path = os.path.join(absolute_path, file.filename)
             counter = 1
             while os.path.exists(file_path):
@@ -748,6 +819,7 @@ class QuickServe:
                 new_filename = f"{name} ({counter}){ext}"
                 file_path = os.path.join(absolute_path, new_filename)
                 counter += 1
+
             try:
                 contents = await file.read()
                 with open(file_path, "wb") as f:
@@ -756,6 +828,7 @@ class QuickServe:
             except Exception as e:
                 self.logger.error(f"File upload write error: {e}")
                 raise HTTPException(status_code=500, detail="Upload failed")
+
             return {
                 "status": "success",
                 "message": "File uploaded successfully",
@@ -852,6 +925,9 @@ class QuickServe:
                 "users_count": len(self.config.users),
                 "allow_origins": self.config.allow_origins,
                 "use_recycle_bin": self.config.use_recycle_bin,
+                "serve_path": self.config.serve_path,
+                "max_file_size_mb": self.config.max_file_size_mb,
+                "max_total_upload_size_mb": self.config.max_total_upload_size_mb,
                 "brute_force_protection": self.config.brute_force_protection,
             }
         except Exception as e:
@@ -904,6 +980,12 @@ class QuickServe:
         print(f"ROOT DIRECTORY:  {self.fs_service.server_root}")
         print(f"CORS ORIGINS:    {self.config.allow_origins}")
         print(f"RECYCLE BIN:     {self.config.use_recycle_bin}")
+        
+        max_file = self.config.max_file_size_mb
+        print(f"MAX FILE SIZE:   {max_file if max_file > 0 else 'Unlimited'} MB")
+        
+        max_total = self.config.max_total_upload_size_mb
+        print(f"MAX TOTAL UPLOAD:{max_total if max_total > 0 else 'Unlimited'} MB")
 
         bf_config = self.config.brute_force_protection
         enabled = bf_config.get("enabled", True)

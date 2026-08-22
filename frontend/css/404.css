@@ -4,111 +4,120 @@
     --accent-3: #b8a9b8;
     --base: #f3eef1;
     --text: #252225;
-    --error: #b03a28;
 
-    --background-primary: rgba(247, 243, 245, 0.85);
-    --background-button: linear-gradient(to right, var(--accent-1), var(--accent-2));
-    --background-button-hover: var(--accent-1);
+    --background-panel: #ffffff;
+    --background-icon: rgba(90, 61, 104, 0.08);
 
-    --shadow-outer-light: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-outer-medium: 0 10px 20px rgba(0, 0, 0, 0.15);
-    --shadow-outer-heavy: 0 20px 40px rgba(0, 0, 0, 0.2);
-    --shadow-button: 0 4px 8px rgba(90, 61, 104, 0.3);
-    --shadow-button-hover: 0 6px 12px rgba(90, 61, 104, 0.4);
-    --shadow-icon: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --border-soft: rgba(37, 34, 37, 0.1);
+    --border-button: 1.5px solid var(--accent-1);
 
-    --border-inner-light: inset 0 1px 1px rgba(255, 255, 255, 0.8);
-    --border-inner-dark: inset 0 -1px 1px rgba(0, 0, 0, 0.05);
-    --border-outer: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-    --border-button: 2px solid var(--accent-1);
+    --shadow-panel: 0 20px 50px rgba(37, 34, 37, 0.14);
+    --shadow-button: 0 6px 18px rgba(90, 61, 104, 0.22);
+    --shadow-button-hover: 0 10px 24px rgba(90, 61, 104, 0.3);
 
     --text-button-primary: white;
     --text-button-secondary: var(--accent-1);
+
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "Inter", "Segoe UI", Roboto, Oxygen, sans-serif;
 }
 
 * {
     -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
 }
 
 body {
     margin: 0;
     padding: 0;
-    font-family: "Segoe UI", Roboto, Oxygen, sans-serif;
-    background: linear-gradient(135deg,
-            var(--accent-3) 0%,
-            var(--base) 50%,
-            var(--accent-3) 100%);
+    font-family: var(--font-body);
+    background: var(--base);
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
+    position: relative;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
 }
 
-@keyframes gradientBG {
-    0% {
-        background-position: 0% 50%;
-    }
+body::before {
+    content: "";
+    position: absolute;
+    top: -15%;
+    right: -12%;
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, var(--accent-3) 0%, transparent 70%);
+    opacity: 0.5;
+    border-radius: 50%;
+    z-index: 0;
+}
 
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
+body::after {
+    content: "";
+    position: absolute;
+    bottom: -20%;
+    left: -12%;
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%);
+    opacity: 0.25;
+    border-radius: 50%;
+    z-index: 0;
 }
 
 .error-panel {
     width: 90%;
-    max-width: 420px;
-    background: var(--background-primary);
-    backdrop-filter: blur(10px);
-    border-radius: 18px;
-    box-shadow: var(--shadow-outer-light),
-        var(--shadow-outer-medium), var(--shadow-outer-heavy),
-        var(--border-outer);
+    max-width: 440px;
+    background: var(--background-panel);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: var(--shadow-panel);
     overflow: hidden;
     position: relative;
     z-index: 1;
     text-align: center;
-    padding: 40px 30px;
-}
-
-.error-panel::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 18px;
-    box-shadow: var(--border-inner-light),
-        var(--border-inner-dark);
-    pointer-events: none;
-    z-index: -1;
+    padding: 3rem 2.25rem;
 }
 
 .error-icon {
-    font-size: 3.5rem;
-    color: var(--error);
-    margin-bottom: 20px;
-    filter: drop-shadow(var(--shadow-icon));
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: var(--background-icon);
+    color: var(--accent-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+}
+
+.error-code {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    color: var(--accent-3);
+    margin-bottom: 0.6rem;
 }
 
 .error-title {
-    font-size: 2rem;
-    color: var(--accent-1);
-    margin: 0 0 15px 0;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.9rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: 0 0 0.85rem 0;
 }
 
 .error-message {
-    font-size: 1.1rem;
-    color: var(--text);
-    margin-bottom: 30px;
-    line-height: 1.5;
+    font-size: 1.02rem;
+    color: var(--accent-2);
+    margin-bottom: 2rem;
+    line-height: 1.55;
 }
 
 .btn {
@@ -117,20 +126,20 @@ body {
     justify-content: center;
     padding: 12px 24px;
     border-radius: 8px;
-    background: var(--background-button);
+    background: var(--accent-1);
     color: var(--text-button-primary);
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.95rem;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     box-shadow: var(--shadow-button);
     border: none;
     cursor: pointer;
     gap: 8px;
-    margin: 5px;
 }
 
 .btn:hover {
+    background: #4a3156;
     transform: translateY(-2px);
     box-shadow: var(--shadow-button-hover);
 }
@@ -143,17 +152,33 @@ body {
     background: transparent;
     color: var(--text-button-secondary);
     border: var(--border-button);
+    box-shadow: none;
 }
 
 .btn-secondary:hover {
-    background: var(--background-button-hover);
+    background: var(--accent-1);
     color: var(--text-button-primary);
+    box-shadow: var(--shadow-button);
 }
 
 .button-group {
     display: flex;
-    gap: 10px;
+    gap: 0.75rem;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+    .error-panel {
+        padding: 2.5rem 1.5rem;
+    }
+
+    .error-title {
+        font-size: 1.6rem;
+    }
+
+    .error-message {
+        font-size: 0.95rem;
+    }
 }
 

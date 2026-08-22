@@ -7,6 +7,10 @@ import bcrypt
 from getpass import getpass
 
 
+APPNAME = "QuickServe API Configurator"
+VERSION = "4.2.0"
+
+
 class QuickServeConfig:
     def __init__(self):
         self.config_file = "config.json"
@@ -45,6 +49,15 @@ class QuickServeConfig:
                             "lockout_duration": 86400,
                         }
 
+                    if "serve_path" not in config_data:
+                        config_data["serve_path"] = "."
+
+                    if "max_file_size_mb" not in config_data:
+                        config_data["max_file_size_mb"] = 0
+
+                    if "max_total_upload_size_mb" not in config_data:
+                        config_data["max_total_upload_size_mb"] = 0
+
                     return config_data
             except:
                 print("Existing config file is corrupted. Creating new configuration.")
@@ -54,6 +67,9 @@ class QuickServeConfig:
             "allow_origins": [],
             "users": {},
             "use_recycle_bin": True,
+            "serve_path": ".",
+            "max_file_size_mb": 0,
+            "max_total_upload_size_mb": 0,
             "brute_force_protection": {
                 "enabled": True,
                 "max_attempts_before_cooldown": 3,
@@ -162,6 +178,16 @@ class QuickServeConfig:
             except ValueError:
                 print("✗ Invalid port number. Using default.")
 
+        current_serve_path = self.config.get("serve_path", ".")
+        serve_path_input = input(f"\nEnter folder path to serve [current folder]: ").strip()
+        if serve_path_input:
+            if os.path.exists(serve_path_input):
+                self.config["serve_path"] = serve_path_input
+                print(f"✓ Serve path set to '{serve_path_input}'")
+            else:
+                print(f"✗ Warning: Path '{serve_path_input}' does not exist. Using default.")
+                self.config["serve_path"] = current_serve_path
+
         current_recycle_bin = self.config.get("use_recycle_bin", True)
         recycle_bin_input = (
             input(f"\nUse recycle bin for deleted files? (Y/n): ")
@@ -174,6 +200,41 @@ class QuickServeConfig:
         elif recycle_bin_input in ["n", "no"]:
             self.config["use_recycle_bin"] = False
             print("✗ Recycle bin disabled")
+
+        print("\nUpload Size Limits:")
+        print("Set maximum file size per upload (0 = unlimited)")
+        current_max_file = self.config.get("max_file_size_mb", 0)
+        max_file_input = input(f"Maximum file size in MB [{current_max_file if current_max_file > 0 else 'unlimited'}]: ").strip()
+        if max_file_input:
+            try:
+                value = int(max_file_input)
+                if value >= 0:
+                    self.config["max_file_size_mb"] = value
+                    if value == 0:
+                        print("✓ File size limit: Unlimited")
+                    else:
+                        print(f"✓ Maximum file size: {value} MB")
+                else:
+                    print("✗ Value cannot be negative")
+            except ValueError:
+                print("✗ Invalid number")
+
+        print("\nSet maximum total upload size across all files (0 = unlimited)")
+        current_max_total = self.config.get("max_total_upload_size_mb", 0)
+        max_total_input = input(f"Maximum total upload size in MB [{current_max_total if current_max_total > 0 else 'unlimited'}]: ").strip()
+        if max_total_input:
+            try:
+                value = int(max_total_input)
+                if value >= 0:
+                    self.config["max_total_upload_size_mb"] = value
+                    if value == 0:
+                        print("✓ Total upload limit: Unlimited")
+                    else:
+                        print(f"✓ Maximum total upload size: {value} MB")
+                else:
+                    print("✗ Value cannot be negative")
+            except ValueError:
+                print("✗ Invalid number")
 
         bf_config = self.config["brute_force_protection"]
         if input("\nEnable brute force protection? (Y/n): ").strip().lower() in ["", "y", "yes"]:
@@ -191,7 +252,7 @@ class QuickServeConfig:
         print("Authentication requires specific frontend URLs.")
         if input("Use default frontend URLs? (Y/n): ").strip().lower() in ["", "y", "yes"]:
             default_origins = [
-                "https://quickserve.noman.qzz.io",
+                "https://quickserve.8gudbits.qzz.io",
                 "https://8gudbits.github.io",
             ]
             self.config["allow_origins"] = default_origins
@@ -213,22 +274,28 @@ class QuickServeConfig:
 
             current_port = self.config.get("port", 5000)
             current_recycle_bin = self.config.get("use_recycle_bin", True)
+            current_serve_path = self.config.get("serve_path", ".")
+            current_max_file = self.config.get("max_file_size_mb", 0)
+            current_max_total = self.config.get("max_total_upload_size_mb", 0)
             bf_enabled = self.config["brute_force_protection"].get("enabled", True)
 
             print(f"1. Server Port: {current_port}")
             print(f"2. Use Recycle Bin: {current_recycle_bin}")
             print(f"3. Brute Force Protection: {'ENABLED' if bf_enabled else 'DISABLED'}")
+            print(f"4. Serve Path: {current_serve_path}")
+            print(f"5. Max File Size: {current_max_file if current_max_file > 0 else 'Unlimited'} MB")
+            print(f"6. Max Total Upload Size: {current_max_total if current_max_total > 0 else 'Unlimited'} MB")
 
             if bf_enabled:
-                print("4. Configure Brute Force Settings")
-                print("5. Back to Main Menu")
+                print("7. Configure Brute Force Settings")
+                print("8. Back to Main Menu")
             else:
-                print("4. Back to Main Menu")
+                print("7. Back to Main Menu")
 
             if bf_enabled:
-                choice = input("\nEnter your choice (1-5): ").strip()
+                choice = input("\nEnter your choice (1-8): ").strip()
             else:
-                choice = input("\nEnter your choice (1-4): ").strip()
+                choice = input("\nEnter your choice (1-7): ").strip()
 
             if choice == "1":
                 self.change_port()
@@ -237,11 +304,17 @@ class QuickServeConfig:
             elif choice == "3":
                 self.toggle_brute_force()
             elif choice == "4":
+                self.change_serve_path()
+            elif choice == "5":
+                self.change_max_file_size()
+            elif choice == "6":
+                self.change_max_total_upload_size()
+            elif choice == "7":
                 if bf_enabled:
                     self.configure_brute_force()
                 else:
                     break
-            elif choice == "5" and bf_enabled:
+            elif choice == "8" and bf_enabled:
                 break
             else:
                 input("✗ Invalid choice. Press Enter to continue...")
@@ -342,6 +415,85 @@ class QuickServeConfig:
                 print("✗ Invalid port number")
         else:
             print("✗ Port unchanged")
+
+        input("\nPress Enter to continue...")
+
+    def change_serve_path(self):
+        self.clear_screen()
+        self.show_banner()
+        print("\nMAIN MENU > SERVER SETTINGS\n > CHANGE SERVE PATH\n")
+        current_path = self.config.get("serve_path", ".")
+        print(f"Current serve path: {current_path}")
+        print("This is the directory that will be served by the file server.\n")
+        
+        serve_path_input = input(f"Enter new directory path [{current_path}]: ").strip()
+
+        if serve_path_input:
+            if os.path.exists(serve_path_input):
+                self.config["serve_path"] = serve_path_input
+                print(f"✓ Serve path changed to '{serve_path_input}'")
+            else:
+                print(f"✗ Error: Path '{serve_path_input}' does not exist.")
+                print("  Please verify the path and try again.")
+        else:
+            print("✗ Path unchanged (using current directory)")
+
+        input("\nPress Enter to continue...")
+
+    def change_max_file_size(self):
+        self.clear_screen()
+        self.show_banner()
+        print("\nMAIN MENU > SERVER SETTINGS\n > CHANGE MAX FILE SIZE\n")
+        current_value = self.config.get("max_file_size_mb", 0)
+        print(f"Current maximum file size: {current_value if current_value > 0 else 'Unlimited'} MB")
+        print("Set to 0 for unlimited, or a positive number to limit individual file uploads.\n")
+        
+        size_input = input(f"Enter maximum file size in MB [{current_value if current_value > 0 else '0 (unlimited)'}]: ").strip()
+
+        if size_input:
+            try:
+                new_value = int(size_input)
+                if new_value >= 0:
+                    self.config["max_file_size_mb"] = new_value
+                    if new_value == 0:
+                        print("✓ Maximum file size set to: Unlimited")
+                    else:
+                        print(f"✓ Maximum file size set to: {new_value} MB")
+                else:
+                    print("✗ Value cannot be negative")
+            except ValueError:
+                print("✗ Invalid number. Please enter a valid integer.")
+        else:
+            print("✗ Setting unchanged")
+
+        input("\nPress Enter to continue...")
+
+    def change_max_total_upload_size(self):
+        self.clear_screen()
+        self.show_banner()
+        print("\nMAIN MENU > SERVER SETTINGS\n > CHANGE MAX TOTAL UPLOAD SIZE\n")
+        current_value = self.config.get("max_total_upload_size_mb", 0)
+        print(f"Current maximum total upload size: {current_value if current_value > 0 else 'Unlimited'} MB")
+        print("Set to 0 for unlimited, or a positive number to limit total uploads across all files.")
+        print("Note: 0 means unlimited, not disabled.\n")
+        
+        size_input = input(f"Enter maximum total upload size in MB [{current_value if current_value > 0 else '0 (unlimited)'}]: ").strip()
+
+        if size_input:
+            try:
+                new_value = int(size_input)
+                if new_value >= 0:
+                    self.config["max_total_upload_size_mb"] = new_value
+                    if new_value == 0:
+                        print("✓ Maximum total upload size set to: Unlimited")
+                    else:
+                        print(f"✓ Maximum total upload size set to: {new_value} MB")
+                else:
+                    print("✗ Value cannot be negative")
+            except ValueError:
+                print("✗ Invalid number. Please enter a valid integer.")
+        else:
+            print("✗ Setting unchanged")
 
         input("\nPress Enter to continue...")
 
@@ -615,7 +767,7 @@ class QuickServeConfig:
         print("• Wildcard '*' origins are BLOCKED by browsers")
         print("• You must specify exact frontend URLs\n")
         print("Recommended: Use 'Use Default' option which includes:")
-        print("• https://quickserve.noman.qzz.io")
+        print("• https://quickserve.8gudbits.qzz.io")
         print("• https://8gudbits.github.io")
         print("\nIf hosting your own frontend, add your exact website URL.")
         input("\nPress Enter to continue...")
@@ -625,7 +777,7 @@ class QuickServeConfig:
         self.show_banner()
         print("\nSETTING DEFAULT ORIGINS\n")
         default_origins = [
-            "https://quickserve.noman.qzz.io",
+            "https://quickserve.8gudbits.qzz.io",
             "https://8gudbits.github.io",
         ]
 
@@ -700,7 +852,14 @@ class QuickServeConfig:
         print("\nMAIN MENU > CURRENT CONFIGURATION\n")
 
         print(f"Port: {self.config.get('port', 5000)}")
+        print(f"Serve Path: {self.config.get('serve_path', '.')}")
         print(f"Use Recycle Bin: {self.config.get('use_recycle_bin', True)}")
+        
+        max_file = self.config.get("max_file_size_mb", 0)
+        print(f"Max File Size: {max_file if max_file > 0 else 'Unlimited'} MB")
+        
+        max_total = self.config.get("max_total_upload_size_mb", 0)
+        print(f"Max Total Upload Size: {max_total if max_total > 0 else 'Unlimited'} MB")
 
         bf_config = self.config.get("brute_force_protection", {})
         enabled = bf_config.get("enabled", True)

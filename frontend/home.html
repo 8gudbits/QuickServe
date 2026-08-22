@@ -1,260 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-    <title>QuickServe | File Browser</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="css/home.css" />
-  </head>
-  <body>
-    <div class="main-container">
-      <div class="navigation-container">
-        <div class="nav-buttons-row">
-          <button
-            class="btn btn-secondary"
-            id="backBtn"
-            disabled
-            aria-label="Go Back"
-          >
-            <i class="fas fa-chevron-left"></i> <span>Go Back</span>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+  <title>QuickServe | File Browser</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/home.css" />
+</head>
+
+<body>
+  <div class="main-container">
+    <div class="navigation-container">
+      <div class="nav-buttons-row">
+        <button class="btn btn-secondary" id="backBtn" disabled aria-label="Go Back">
+          <i class="fas fa-chevron-left"></i> <span>Go Back</span>
+        </button>
+        <button class="btn btn-secondary" id="rootBtn" aria-label="Root Directory">
+          <i class="fas fa-home"></i> <span>Root</span>
+        </button>
+        <div class="search-container">
+          <button class="btn btn-secondary" id="searchBtn" aria-label="Search Files">
+            <i class="fas fa-search"></i> <span>Search</span>
           </button>
-          <button
-            class="btn btn-secondary"
-            id="rootBtn"
-            aria-label="Root Directory"
-          >
-            <i class="fas fa-home"></i> <span>Root</span>
-          </button>
-          <div class="search-container">
-            <button
-              class="btn btn-secondary"
-              id="searchBtn"
-              aria-label="Search Files"
-            >
-              <i class="fas fa-search"></i> <span>Search</span>
-            </button>
-            <div id="searchBox" class="search-box">
-              <div class="search-input-row">
-                <input
-                  type="text"
-                  id="searchInput"
-                  placeholder="Enter filename to search..."
-                />
-                <button
-                  class="btn btn-secondary"
-                  id="executeSearch"
-                  aria-label="Search"
-                >
-                  <i class="fas fa-search"></i>
-                </button>
-              </div>
-              <button
-                class="btn btn-secondary"
-                id="closeSearch"
-                aria-label="Close Search"
-              >
-                <i class="fas fa-times"></i> <span>Close</span>
+          <div id="searchBox" class="search-box">
+            <div class="search-input-row">
+              <input type="text" id="searchInput" placeholder="Enter filename to search..." />
+              <button class="btn btn-secondary" id="executeSearch" aria-label="Search">
+                <i class="fas fa-search"></i>
               </button>
             </div>
-          </div>
-          <button
-            class="btn btn-secondary"
-            id="sortBtn"
-            aria-label="Sort Files"
-          >
-            <i class="fas fa-sort"></i> <span>Sort</span>
-          </button>
-          <label
-            for="file-input"
-            class="btn btn-secondary"
-            id="uploadLabel"
-            aria-label="Upload File"
-          >
-            <i class="fas fa-cloud-upload-alt"></i> <span>Upload</span>
-          </label>
-          <input type="file" id="file-input" name="file" class="file-input" />
-
-          <button
-            class="btn btn-secondary"
-            id="zipSelectBtn"
-            aria-label="Select Files for Zipping"
-          >
-            <i class="fas fa-file-archive"></i> <span>Zip</span>
-          </button>
-
-          <a
-            href="login.html"
-            class="btn btn-secondary"
-            id="logoutLink"
-            aria-label="Logout"
-          >
-            <i class="fas fa-power-off"></i> <span>Logout</span>
-          </a>
-        </div>
-
-        <div class="server-info-row">
-          <div class="info-box" id="serverInfo">
-            <i class="fas fa-server"></i>
-            <span class="info-box-content" id="serverText">Connecting...</span>
+            <button class="btn btn-secondary" id="closeSearch" aria-label="Close Search">
+              <i class="fas fa-times"></i> <span>Close</span>
+            </button>
           </div>
         </div>
+        <button class="btn btn-secondary" id="sortBtn" aria-label="Sort Files">
+          <i class="fas fa-sort"></i> <span>Sort</span>
+        </button>
+        <label for="file-input" class="btn btn-secondary" id="uploadLabel" aria-label="Upload File">
+          <i class="fas fa-cloud-upload-alt"></i> <span>Upload</span>
+        </label>
+        <input type="file" id="file-input" name="file" class="file-input" multiple />
 
-        <div class="current-path-row">
-          <div class="info-box">
-            <i class="fas fa-folder"></i>
-            <span class="path-content" id="currentPathText">/</span>
-          </div>
+        <button class="btn btn-secondary" id="zipSelectBtn" aria-label="Select Files for Zipping">
+          <i class="fas fa-file-archive"></i> <span>Zip</span>
+        </button>
+
+        <a href="login.html" class="btn btn-secondary" id="logoutLink" aria-label="Logout">
+          <i class="fas fa-power-off"></i> <span>Logout</span>
+        </a>
+      </div>
+
+      <div class="server-info-row">
+        <div class="info-box" id="serverInfo">
+          <i class="fas fa-server"></i>
+          <span class="info-box-content" id="serverText">Connecting...</span>
         </div>
       </div>
 
-      <div class="table-container">
-        <div id="loadingState" class="loading">
-          <i class="fas fa-spinner fa-spin"></i>
-          <p>Loading files...</p>
+      <div class="current-path-row">
+        <div class="info-box">
+          <i class="fas fa-folder"></i>
+          <span class="path-content" id="currentPathText">/</span>
         </div>
-        <div id="emptyState" class="empty-state" style="display: none">
-          <i class="fas fa-folder-open"></i>
-          <p>This folder is empty</p>
-        </div>
-        <table id="filesTable" style="display: none">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Date Modified</th>
-              <th>Size</th>
-              <th class="menu-column"></th>
-            </tr>
-          </thead>
-          <tbody id="filesTableBody"></tbody>
-        </table>
       </div>
     </div>
 
-    <div class="context-menu-overlay" id="contextMenuOverlay"></div>
-
-    <div class="context-menu" id="contextMenu">
-      <div class="context-menu-item" id="openOption">
+    <div class="table-container">
+      <div id="loadingState" class="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading files...</p>
+      </div>
+      <div id="emptyState" class="empty-state" style="display: none">
         <i class="fas fa-folder-open"></i>
-        <span>Open Folder</span>
+        <p>This folder is empty</p>
       </div>
-      <div class="context-menu-item" id="previewOption">
-        <i class="fas fa-eye"></i>
-        <span>Preview</span>
+      <table id="filesTable" style="display: none">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Date Modified</th>
+            <th>Size</th>
+            <th class="menu-column"></th>
+          </tr>
+        </thead>
+        <tbody id="filesTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="dropOverlay" class="drop-overlay" style="display: none;">
+    <div class="drop-content">
+      <i class="fas fa-cloud-upload-alt fa-3x"></i>
+      <p>Drop files here to upload</p>
+    </div>
+  </div>
+
+  <div class="context-menu-overlay" id="contextMenuOverlay"></div>
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" id="openOption">
+      <i class="fas fa-folder-open"></i>
+      <span>Open Folder</span>
+    </div>
+    <div class="context-menu-item" id="previewOption">
+      <i class="fas fa-eye"></i>
+      <span>Preview</span>
+    </div>
+    <div class="context-menu-item" id="downloadOption">
+      <i class="fas fa-download"></i>
+      <span>Download</span>
+    </div>
+    <div class="context-menu-item" id="downloadZipOption">
+      <i class="fas fa-file-archive"></i>
+      <span>Download as ZIP</span>
+    </div>
+    <div class="context-menu-item" id="deleteOption">
+      <i class="fas fa-trash"></i>
+      <span>Delete</span>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+      <div class="modal-title">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Confirm Delete</span>
       </div>
-      <div class="context-menu-item" id="downloadOption">
-        <i class="fas fa-download"></i>
-        <span>Download</span>
+      <div class="modal-message" id="deleteModalMessage">
+        Are you sure you want to delete this item?
       </div>
-      <div class="context-menu-item" id="downloadZipOption">
-        <i class="fas fa-file-archive"></i>
-        <span>Download as ZIP</span>
-      </div>
-      <div class="context-menu-item" id="deleteOption">
-        <i class="fas fa-trash"></i>
-        <span>Delete</span>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="cancelDelete">
+          Cancel
+        </button>
+        <button class="modal-btn modal-btn-delete" id="confirmDelete">
+          Delete
+        </button>
       </div>
     </div>
+  </div>
 
-    <div class="modal-overlay" id="deleteModal">
-      <div class="modal-content">
-        <div class="modal-title">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>Confirm Delete</span>
-        </div>
-        <div class="modal-message" id="deleteModalMessage">
-          Are you sure you want to delete this item?
-        </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" id="cancelDelete">
-            Cancel
-          </button>
-          <button class="modal-btn modal-btn-delete" id="confirmDelete">
-            Delete
-          </button>
-        </div>
+  <div class="modal-overlay" id="sortModal">
+    <div class="modal-content sort-modal-content">
+      <div class="modal-title">
+        <i class="fas fa-sort-amount-down"></i>
+        <span>Sort Files</span>
       </div>
-    </div>
-
-    <div class="modal-overlay" id="sortModal">
-      <div class="modal-content sort-modal-content">
-        <div class="modal-title">
-          <i class="fas fa-sort-amount-down"></i>
-          <span>Sort Files</span>
-        </div>
-        <div class="sort-options">
-          <div class="sort-option-group">
-            <h4>Sort by:</h4>
-            <div class="sort-option" data-sort="name-asc">
-              <i class="fas fa-font"></i>
-              <span>Name (A to Z)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="name-desc">
-              <i class="fas fa-font"></i>
-              <span>Name (Z to A)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="date-asc">
-              <i class="fas fa-calendar"></i>
-              <span>Date (Oldest first)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="date-desc">
-              <i class="fas fa-calendar"></i>
-              <span>Date (Newest first)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="type-asc">
-              <i class="fas fa-file"></i>
-              <span>Type (A to Z)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="type-desc">
-              <i class="fas fa-file"></i>
-              <span>Type (Z to A)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="size-asc">
-              <i class="fas fa-weight-hanging"></i>
-              <span>Size (Smallest first)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
-            <div class="sort-option" data-sort="size-desc">
-              <i class="fas fa-weight-hanging"></i>
-              <span>Size (Largest first)</span>
-              <i class="fas fa-check check-icon" style="display: none"></i>
-            </div>
+      <div class="sort-options">
+        <div class="sort-option-group">
+          <h4>Sort by:</h4>
+          <div class="sort-option" data-sort="name-asc">
+            <i class="fas fa-font"></i>
+            <span>Name (A to Z)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
           </div>
-          <div class="sort-option-group">
-            <h4>Folders first:</h4>
-            <div class="sort-toggle">
-              <span>Always keep folders at top</span>
-              <label class="switch">
-                <input type="checkbox" id="foldersFirstToggle" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
+          <div class="sort-option" data-sort="name-desc">
+            <i class="fas fa-font"></i>
+            <span>Name (Z to A)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
+          </div>
+          <div class="sort-option" data-sort="date-asc">
+            <i class="fas fa-calendar"></i>
+            <span>Date (Oldest first)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
+          </div>
+          <div class="sort-option" data-sort="date-desc">
+            <i class="fas fa-calendar"></i>
+            <span>Date (Newest first)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
+          </div>
+          <div class="sort-option" data-sort="type-asc">
+            <i class="fas fa-file"></i>
+            <span>Type (A to Z)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
+          </div>
+          <div class="sort-option" data-sort="type-desc">
+            <i class="fas fa-file"></i>
+            <span>Type (Z to A)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
+          </div>
+          <div class="sort-option" data-sort="size-asc">
+            <i class="fas fa-weight-hanging"></i>
+            <span>Size (Smallest first)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
+          </div>
+          <div class="sort-option" data-sort="size-desc">
+            <i class="fas fa-weight-hanging"></i>
+            <span>Size (Largest first)</span>
+            <i class="fas fa-check check-icon" style="display: none"></i>
           </div>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" id="cancelSort">
-            Cancel
-          </button>
-          <button class="modal-btn modal-btn-primary" id="applySort">
-            Apply Sort
-          </button>
+        <div class="sort-option-group">
+          <h4>Folders first:</h4>
+          <div class="sort-toggle">
+            <span>Always keep folders at top</span>
+            <label class="switch">
+              <input type="checkbox" id="foldersFirstToggle" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="cancelSort">
+          Cancel
+        </button>
+        <button class="modal-btn modal-btn-primary" id="applySort">
+          Apply Sort
+        </button>
+      </div>
     </div>
+  </div>
 
-    <div id="toastContainer" class="toast-container"></div>
+  <div id="toastContainer" class="toast-container"></div>
 
-    <script src="js/home.js"></script>
-  </body>
+  <script src="js/home.js"></script>
+</body>
+
 </html>
-

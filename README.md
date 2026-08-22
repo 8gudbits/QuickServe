@@ -10,7 +10,7 @@ Learn more at: [https://quickserve.8gudbits.qzz.io/](https://8gudbits.github.io/
 
 Get the latest release from the [releases section](https://github.com/8gudbits/QuickServe/releases).
 
-_**NOTE:** This guide assumes you are using the source version of QuickServe (Python scripts). If you downloaded a compiled release (`.exe` for Windows or binary for Linux), the steps are the same - simply run the binary directly from your terminal (`cmd/powershell` or `bash`) instead of using `python` to launch the scripts._
+_**NOTE:** This guide assumes you are using the source version of QuickServe (Python scripts). If you downloaded a compiled release (`.exe` for Windows or binary for Linux), the steps are the same - simply run the binary directly from your terminal (`cmd/powershell` or `bash`) instead of using `python` to launch the scripts or you can read the [INSTRUCTIONS.md](INSTRUCTIONS.md) file that is provided with the download copy (v4.2.0+)._
 
 ## Requirements For Source Code Users:
 
@@ -28,7 +28,7 @@ Before running the server, configure it using the built-in configurator:
 
 ```bash
 cd backend
-python qconfig.py
+python quickconfig.py
 ```
 
 This launches an interactive menu where you can:
@@ -52,7 +52,7 @@ The server will start and display access URLs for both local computer and networ
 
 To use the official web interface at `https://quickserve.8gudbits.qzz.io`, you must allow it as a CORS origin in your configuration:
 
-1. Run python `qconfig.py`
+1. Run python `quickconfig.py`
 2. Select "Manage CORS Origins"
 3. Add `https://quickserve.8gudbits.qzz.io` to allowed origins
 
